@@ -12,7 +12,28 @@ Inspect repository/history and docs. Produce a concise implementation plan and f
 
 ## Stack
 
-Prefer Next.js App Router, React, TypeScript, Tailwind/CSS variables, Supabase Auth/Postgres/Storage/RLS, Motion for React, GSAP selectively, Three.js/R3F only for true 3D, FastAPI AI/media worker, Pillow/OpenCV, Zod/Pydantic, Vitest/Playwright/pytest. Explain alternatives in a decision record. No microservice sprawl or per-restaurant generated code.
+Prefer Next.js App Router, React, TypeScript, Tailwind/CSS variables, Supabase Auth/Postgres/Storage/RLS, Motion for React, GSAP selectively, Three.js/R3F only for true 3D, FastAPI AI Service Layer and worker, Pillow/OpenCV, ONNX Runtime where appropriate, Pydantic/Pydantic AI, Zod, Vitest/Playwright/pytest. Use Ollama as the first local model runner; keep model runtime behind an adapter so vLLM/llama.cpp can be introduced later. Explain alternatives in a decision record. No microservice sprawl or per-restaurant generated code.
+
+## Free/open-source AI is a product requirement
+
+Do not make paid hosted inference APIs a dependency. Do not assume Hugging Face hosted inference is free or unlimited. Download commercially permitted pretrained weights and run them on our own AI worker. "Free" still requires compute, RAM/VRAM, storage, bandwidth and hosting. Never train a model or agent from scratch.
+
+Read docs/AI_MEDIA_PIPELINE.md before selecting models. Candidate starting points:
+- Text: Qwen/Qwen3-4B (Hugging Face; Apache-2.0 model card) via Ollama for constrained copy drafts and categorization.
+- Vision: Qwen/Qwen3-VL-4B-Instruct (Hugging Face; Apache-2.0 model card) for visual quality/crop suggestions and draft alt text.
+- Segmentation: rembg integration, but check license of each exact downloaded model weight. Do not assume the Python package license covers the weights. Do not use BRIA RMBG-2.0 for commercial use without its separate permission.
+- Enhancement: deterministic Pillow/OpenCV first; evaluate local-upscaler/Upscaler and exact Real-ESRGAN weights before use.
+- Optional image generation: black-forest-labs/FLUX.1-schnell (Apache-2.0; heavy 12B model). Do not use FLUX dev/Kontext/Krea/Fill under the Schnell license; their terms differ.
+- Optional image-to-3D: Microsoft TRELLIS.2-4B is experimental, very large and hardware-heavy. A single image cannot reveal hidden sides. Decorative only, never required.
+- Avoid Depth Anything V2 Base checkpoint listed CC-BY-NC-4.0 for this commercial product.
+
+Pin model revisions and create docs/MODEL_CATALOG.md recording model ID, revision, weight/code license, commercial approval, attribution, size, hardware, known failures and review date. Block any unclear or non-commercial license.
+
+## AI Service Layer architecture
+
+Frontend -> authenticated FastAPI AI Service Layer -> typed task router -> deterministic pipeline or local model adapter -> background job queue -> output storage -> owner approval UI. Never call model endpoints directly from browser. Use Pydantic schemas. Pydantic AI can orchestrate bounded structured tasks with Ollama; do not build a broad autonomous agent with unrestricted tools. Use deterministic code for uploads, transformations, permissions, database writes and publishing. AI optional: all core menu functionality must work when no model is loaded.
+
+Initial tasks: image-quality suggestions, crop suggestions, alt-text draft, menu description draft from owner facts, category suggestion, background removal, enhancement, 2.5D motion-asset preparation. Each job has ownership checks, timeout, retry/idempotency, audit record and explicit approval. No AI output is auto-published.
 
 ## Visual quality — critical
 
@@ -50,11 +71,7 @@ Magazine: consistent transform origin and direction; content never mirrored or u
 
 ## Turning uploaded photos into moving objects
 
-Do not claim one photo becomes a perfect 3D model. Level 1 MVP: pretrained segmentation/background removal -> transparent cutout -> edge cleanup -> CSS 2.5D transforms, shadow and subtle parallax. Level 2: cautious depth layers and small parallax; preserve flat fallback. Level 3 future: pretrained image-to-3D; hidden sides are guessed/hallucinated, so decorative only, owner approval, never factual product photo. For food, Level 1/2 is usually the right approach.
-
-## AI media rules
-
-Preserve immutable original. Use deterministic resize/crop/exposure/contrast/white balance/sharpening first. Pretrained vision model may suggest quality/crop/alt text and draft copy only from owner facts. Background removal via pretrained segmentation such as rembg/U2-Net or maintained alternative. Optional generative background edit must preserve dish identity, visible ingredients, toppings, quantity, shape, texture, vessel; do not add/remove food/garnish, alter portion or invent steam. Compare before/after. If product truth changes, creative-only label and do not use as factual menu photo. All outputs stored as derivatives, model/operation recorded, owner approves, reject/restore available. Cost-limit, retry safely, keep API keys server-side. AI optional; app works with no AI keys. Do not train a model/agent from scratch.
+Do not claim one photo becomes a perfect 3D model. Level 1 MVP: commercially cleared pretrained segmentation/background removal -> transparent cutout -> edge cleanup -> CSS 2.5D transforms, shadow and subtle parallax. Level 2: commercially cleared cautious depth layers and small parallax; preserve flat fallback. Level 3 future: pretrained image-to-3D; hidden sides are guessed/hallucinated, so decorative only, owner approval, never factual product photo. For food, Level 1/2 is usually the right approach.
 
 ## Restaurant story and information
 
@@ -75,15 +92,16 @@ Tenant isolation via RLS and server authorization. Safe money representation. Va
 7 Draft preview, immutable publish, public route.
 8 Orbital Menu geometry and motion.
 9 Ingredient Universe 2.5D.
-10 AI media pipeline and review.
-11 CSV import, QR, story sections.
-12 Remaining templates.
+10 AI Service Layer skeleton with mock provider and job records; no model downloads yet.
+11 Add one local text model and one segmentation model only after hardware/license review; implement owner approval.
+12 CSV import, QR, story sections.
+13 Remaining templates and optional image generation/3D only if budget/hardware justify them.
 
 Do not start all templates simultaneously. Complete and test each vertical slice.
 
 ## Quality gates
 
-Run typecheck, lint, unit and E2E tests. Test mobile/tablet/desktop; long names/descriptions; missing photos; one/many items; variants; hidden prices; keyboard; reduced motion; contrast; focus; overflow; layout shift; image distortion; real phone animation performance; tenant isolation; public draft privacy; original image preservation; AI approval. Update README/docs to describe actual behavior and label incomplete features honestly.
+Run typecheck, lint, unit and E2E tests. Test mobile/tablet/desktop; long names/descriptions; missing photos; one/many items; variants; hidden prices; keyboard; reduced motion; contrast; focus; overflow; layout shift; image distortion; real phone animation performance; tenant isolation; public draft privacy; original image preservation; AI approval; model license records; behavior with AI unavailable. Update README/docs to describe actual behavior and label incomplete features honestly.
 
 ## Working style
 
