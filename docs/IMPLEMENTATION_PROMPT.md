@@ -1,108 +1,121 @@
-# Master Prompt for the Coding Agent
+# FINAL MASTER IMPLEMENTATION PROMPT — UrOwnMenu
 
-You are the lead product designer, senior frontend engineer, backend architect, motion specialist and AI/media engineer implementing UrOwnMenu. Repository: https://github.com/BasantAwad/UrOwnMenu. Read README and every document in docs before coding. Preserve all inspiration links in docs/INSPIRATION.md.
+Repository: https://github.com/BasantAwad/UrOwnMenu
+Budget: $0 total. Owner has no payment card. No paid APIs, trials, subscriptions, mandatory billing, automatic upgrades or paid fallback.
 
-## Mission
+You are the senior product architect, creative director, interaction/motion designer, frontend/backend engineer, database engineer, AI integration engineer and QA lead. Before coding, inspect the whole repository and read every document in docs/, especially PRODUCT_SPEC.md, INSPIRATION.md, DESIGN_SYSTEM.md, TEMPLATES.md, MOTION_AND_INTERACTION.md, ARCHITECTURE.md, DATABASE_SCHEMA.md, AI_MEDIA_PIPELINE.md, MODEL_CATALOG.md, DEPLOYMENT.md and ROADMAP.md. Preserve every original inspiration URL. The Wove screenshot is attached in the original product conversation; if it is not in your workspace, use INSPIRATION.md and ask for the image only if exact visual inspection is essential. Pinterest short links may be inaccessible; never hallucinate what they show.
 
-Build a production-minded multi-tenant platform where restaurant owners upload menu items (name, description, clear photo, category, price), their restaurant logo, choose brand palette and visual template, preview real content, and publish a beautiful mobile-first menu website with URL/QR. It must feel art-directed for the restaurant, not like a generic template or identical cards.
+## 1. Product vision
+UrOwnMenu is a multi-tenant menu website builder for restaurants, cafés, coffee shops, juice bars, bakeries, dessert shops, pizzerias, burger places, fine dining and food trucks. Owners upload restaurant information, logo, brand palette, menu categories, item names, descriptions, prices and clear photos; select a creative template; preview; and publish a mobile-first menu site with shareable URL and QR.
 
-## First steps
+The differentiator is food-aware art direction: composition, proportion, image dimensions, depth, lighting, typography, whitespace, precise geometry and smooth purposeful motion. This must not look like generic repeated cards. Some clients want aesthetic landing page then conventional menu; some want no landing page and an immersive continuous scroll; some want magazine spreads; others want orbital dishes or drinks with floating ingredients.
 
-Inspect repository/history and docs. Produce a concise implementation plan and file map. Keep docs. Make conservative decisions; ask only about choices affecting scope, ongoing cost, or external credentials. Keep app runnable after every phase. Do not install unnecessary packages.
+## 2. Absolute financial constraint
+Owner has $0 and no card. Never request card details, enable paid billing, auto-upgrade, use trial credits as a production plan, or depend on paid APIs. If signup/product activation unexpectedly asks for a card, stop and report; do not bypass or enter fake details. AI is optional; core menu works without it. Respect quotas and fail gracefully. Never claim free tiers are permanent.
 
-## Stack
+Use free-first stack from ARCHITECTURE.md and DEPLOYMENT.md:
+- React + TypeScript + Vite static frontend -> Cloudflare Pages.
+- TypeScript Hono API -> Cloudflare Workers Free.
+- Cloudflare D1 SQLite + Drizzle ORM.
+- Cloudflare R2 Standard for images.
+- Better Auth with D1-compatible adapter.
+- Workers AI only for models confirmed free on this account.
+- Browser Canvas/Web Workers and optional small commercially cleared ONNX model for media processing.
+- GitHub for source control.
+No MVP dependency on Next.js SSR, Vercel, Supabase, Neon, Render, FastAPI hosting, paid inference, GPU host, paid email or custom domains. These may be future migration options only.
 
-Prefer Next.js App Router, React, TypeScript, Tailwind/CSS variables, Supabase Auth/Postgres/Storage/RLS, Motion for React, GSAP selectively, Three.js/R3F only for true 3D, FastAPI AI Service Layer and worker, Pillow/OpenCV, ONNX Runtime where appropriate, Pydantic/Pydantic AI, Zod, Vitest/Playwright/pytest. Use Ollama as the first local model runner; keep model runtime behind an adapter so vLLM/llama.cpp can be introduced later. Explain alternatives in a decision record. No microservice sprawl or per-restaurant generated code.
+## 3. Inspiration — inspect before designing
+Read docs/INSPIRATION.md and retain every exact URL:
+- Wove mobile screenshot / https://wove.com/ — pale monochrome, elliptical orbit, active marker, large numbered section, negative space. Inspiration for spatial navigation; don't copy identity.
+- Food orbit: https://i.pinimg.com/1200x/a6/a3/df/a6a3df148804d2b961da16495f5f1f46.jpg
+- Rotating drink + floating ingredients: https://pin.it/6cUOzJgzo
+- Aesthetic hero: https://pin.it/2q7qgf3Sr ; https://pin.it/77FSUiu6H ; https://pin.it/2QTrkOGyS
+- Continuous scrolling menu: https://pin.it/f0Ykn7XLS ; https://pin.it/7swRilPDK
+- Magazine/page-turn: described by owner, no URL.
+Inspect if accessible. Pinterest can redirect or require login; don't invent inaccessible visuals. Links are inspiration only, not assets to hotlink or copy.
 
-## Free/open-source AI is a product requirement
+## 4. Branding, logo and palette
+Separate UrOwnMenu platform identity from each restaurant's identity. Platform may use restrained placeholder wordmark until approved. Client logo: upload/preview/replace/remove; primary/light/dark/icon variants; transparent PNG/WebP; SVG only if sanitized server-side (otherwise reject). Contain-fit; never stretch, crop or recolor by default. Preserve original, create optimized derivative, preview on light/dark backgrounds, show contrast warning. If absent, use restaurant name as typographic wordmark, not fabricated emblem.
+Implement semantic CSS tokens: primary, secondary, accent, page background, surface, elevated surface, primary/secondary/muted text, border, overlay, focus. Include all palettes in DESIGN_SYSTEM.md: Espresso & Cream, Tomato & Parchment, Midnight & Champagne, Pistachio & Vanilla, Citrus Pop, Ocean Glass, Black & Bone, Berry & Blush. Editable custom colors, contrast checking and real-menu preview. Logo color extraction only proposes palettes; owner chooses. Never auto-recolor logo. Support Arabic/RTL and proper font fallbacks.
 
-Do not make paid hosted inference APIs a dependency. Do not assume Hugging Face hosted inference is free or unlimited. Download commercially permitted pretrained weights and run them on our own AI worker. "Free" still requires compute, RAM/VRAM, storage, bandwidth and hosting. Never train a model or agent from scratch.
+## 5. Templates — truly distinct experiences
+Versioned template registry; Zod-validated configuration; templates consume normalized menu data + theme tokens. Switching templates must never lose content.
+1. Editorial Showcase: cinematic hero, restaurant identity, short statement, signature dish, clear Explore Menu, optional story, categories and full menu.
+2. Orbital Menu: pizza/burgers/donuts/round dishes. Active item moves to focal area; description and price in stable panel. Horizontal, vertical, centered variants; real ellipse geometry.
+3. Ingredient Universe: central drink/glass or plate; owner-confirmed ingredient cutouts in front/middle/back planes; connector labels, coherent perspective/light/shadows; stable deliberate motion, not random floating PNGs.
+4. Endless Table: no mandatory landing; native editorial vertical scroll with alternating image/text, category chapters and category jump.
+5. Menu Magazine: editorial spreads, page number, category tabs and page-turn/fold/slide transition; reliable 2D first, no unreadable physics. Mobile swipe/vertical spreads and accessible list fallback.
+6. Floating Gallery: layered cutouts, controlled overlap, contact shadows, subtle parallax, anchored text.
+7. Bento Table: asymmetric grid, variable tile size, accessible detail.
+8. Chef's Story: founder/chef narrative woven with signature dishes; full menu one tap away.
+9. Tasting Journey: numbered courses, owner-supplied notes, progress and jump navigation.
+10. Minimalist Menu: typography-first, whitespace, price alignment and restrained imagery.
+11. 3D Gallery: optional real spatial carousel; dynamically load; CSS/DOM fallback.
+Future: Sauce/Layer Exploded View; Seasonal Storyboard.
+Recommendation uses menu type, item count, photo coverage, mood, story preference, orientation and course-based setting; returns at most 3 reasons; owner decides.
 
-Read docs/AI_MEDIA_PIPELINE.md before selecting models. Candidate starting points:
-- Text: Qwen/Qwen3-4B (Hugging Face; Apache-2.0 model card) via Ollama for constrained copy drafts and categorization.
-- Vision: Qwen/Qwen3-VL-4B-Instruct (Hugging Face; Apache-2.0 model card) for visual quality/crop suggestions and draft alt text.
-- Segmentation: rembg integration, but check license of each exact downloaded model weight. Do not assume the Python package license covers the weights. Do not use BRIA RMBG-2.0 for commercial use without its separate permission.
-- Enhancement: deterministic Pillow/OpenCV first; evaluate local-upscaler/Upscaler and exact Real-ESRGAN weights before use.
-- Optional image generation: black-forest-labs/FLUX.1-schnell (Apache-2.0; heavy 12B model). Do not use FLUX dev/Kontext/Krea/Fill under the Schnell license; their terms differ.
-- Optional image-to-3D: Microsoft TRELLIS.2-4B is experimental, very large and hardware-heavy. A single image cannot reveal hidden sides. Decorative only, never required.
-- Avoid Depth Anything V2 Base checkpoint listed CC-BY-NC-4.0 for this commercial product.
+## 6. Motion and wow factor
+Motion is a design system, not random decoration. Every complex interaction specifies initial/final position, transform origin, dimensions, scale/rotation, depth plane, easing/spring, duration, stagger, trigger, interruption, responsive and reduced-motion behavior.
+Use Motion for React by default; GSAP only for coordinated timelines; Three.js/R3F only for true 3D and dynamically imported; CSS transforms for lightweight 2.5D. Prefer transform/opacity.
+Orbital formula: x=cx+rx*cos(theta), y=cy+ry*sin(theta). Compute radii from viewport and item bounds. Avoid text collisions. On selection rotate shortest path, move selected dish into focus, recede others, synchronize image/title/description/price/marker. Support tap, swipe/drag and keyboard. Autoplay off by default, pause on interaction.
+Ingredient scene: central hero dominant; stable anchors, coherent light direction and contact shadows, connector lines; ingredients follow intentional paths; labels appear after objects settle. No crossing text/hero; simplify mobile.
+Magazine: consistent hinge/origin/direction, never mirror text; 2D first; swipe/list fallback.
+No scroll hijack, forced intro, hover-only information, endless auto-rotation, or animation blocking menu. Respect prefers-reduced-motion. Static fallback always.
 
-Pin model revisions and create docs/MODEL_CATALOG.md recording model ID, revision, weight/code license, commercial approval, attribution, size, hardware, known failures and review date. Block any unclear or non-commercial license.
+## 7. Photo pipeline and moving objects
+Preserve original immutably. Validate magic bytes, MIME, dimensions and size; normalize EXIF; create responsive WebP variants. Browser controls: crop, subject position, exposure, white balance, contrast, restrained sharpen.
+AI photo processing optional and reviewable: quality/crop suggestion, alt-text draft, conservative enhancement, background removal only with a small browser-compatible commercially cleared model. Owner compares before/after and approves. Never assume wrapper license covers weights.
+Moving levels:
+- Level 1 MVP: transparent cutout + CSS 2.5D transform, controlled shadow, subtle parallax.
+- Level 2: cautious depth layers/small displacement, flat fallback.
+- Level 3 future: image-to-3D. One image cannot reveal hidden sides; mesh can hallucinate. Decorative only, explicit owner approval; never factual menu representation.
+Disable image generation in MVP: it may alter dish identity, toppings, ingredients or quantity. If future generation is added, create background/campaign art separately while keeping real dish photo locked.
 
-## AI Service Layer architecture
+## 8. AI agents and Service Layer
+No giant autonomous agent. Production MVP bounded tasks:
+- Menu Copy Assistant: draft based only on owner facts.
+- Menu Organizer: category/order suggestions.
+- Template Recommender: deterministic rules first; AI may explain.
+- Visual Review Assistant: optional vision suggestions for crop/quality/alt text.
+- Media Preparation: deterministic browser code, not LLM.
+Workers AI is optional first provider. Free allocation currently documented as 10,000 Neurons/day; model availability differs and some models require paid plan. Verify exact model/account eligibility. Candidate model IDs are not guarantees. No hosted Hugging Face inference dependency.
+Strict Zod inputs/outputs, allowlisted tasks/model IDs, bounded prompts, timeouts, per-user/restaurant quotas, audit records, owner approval. No unrestricted shell/filesystem/SQL/publish tools. AI quota failure must not block menu CRUD or public menus.
 
-Frontend -> authenticated FastAPI AI Service Layer -> typed task router -> deterministic pipeline or local model adapter -> background job queue -> output storage -> owner approval UI. Never call model endpoints directly from browser. Use Pydantic schemas. Pydantic AI can orchestrate bounded structured tasks with Ollama; do not build a broad autonomous agent with unrestricted tools. Use deterministic code for uploads, transformations, permissions, database writes and publishing. AI optional: all core menu functionality must work when no model is loaded.
+## 9. Database, auth and security
+Implement docs/DATABASE_SCHEMA.md and migrations/0001_initial.sql. Generate Better Auth D1 identity schema first; app migration references its user table (adjust if generated name differs). Do not hand-roll passwords.
+Core entities: users/sessions; restaurants/memberships; brand profiles; menus/categories/items/variants; media assets/derivatives; story sections; site configs; immutable published versions; AI jobs; audit logs.
+Money integer minor units + currency, never float. UUID IDs; ISO UTC times. Foreign keys/indexes. Every query tenant-scoped; every mutation server-authorized; never trust client restaurant_id. Verify assets belong to restaurant. Secure HttpOnly SameSite sessions, CSRF/origin checks, strict CORS, rate limits, server-side secrets. Public snapshots exclude private email/memberships/prompts/audit. No ordering/payments/customer data in MVP.
 
-Initial tasks: image-quality suggestions, crop suggestions, alt-text draft, menu description draft from owner facts, category suggestion, background removal, enhancement, 2.5D motion-asset preparation. Each job has ownership checks, timeout, retry/idempotency, audit record and explicit approval. No AI output is auto-published.
+## 10. Owner dashboard and public site
+Onboarding: register; create restaurant profile (name/slug/description/contact/address/currency/locale/timezone); upload logo/cover; choose palette; create menus/categories; add item name/description/photo/category/price; optional variants, owner-confirmed ingredients/allergens/dietary notes/tags/availability/featured; choose template; preview phone/tablet/desktop; enable/reorder story/chef/gallery/location/hours/contact/social; publish and generate QR.
+Manual item entry first. CSV import later with mapping, preview, duplicate detection and validation. Do not require scraping or PDF extraction.
+Public route anonymous, fast, mobile-first, full menu reachable, template-specific hero/story, optimized images and SEO from verified data only. Use shared platform path/subdomain; no custom domain purchase.
 
-## Visual quality — critical
+## 11. Publishing
+Draft changes never alter live site until publish. Validate data/config/assets; serialize immutable versioned snapshot with checksum; write PublishedVersion and update restaurant published pointer atomically; cache/invalidate; retain rollback/unpublish. Preview authenticated/noindex. Public route reads snapshot only and never invokes AI.
 
-Public menu is a designed experience, not a dashboard. Every section must have purpose: hero, menu navigation, signature dishes, full menu, story, gallery, location, hours, contact. Avoid generic repeated boxes, random gradients, arbitrary floating images, excessive rounding, weak contrast and decorative animation without meaning. Establish focal point, grid, whitespace rhythm, type scale, image aspect ratios, color relationships and section transitions. Use uploaded client logo and palette. Never stretch/crop logo. If absent, use restaurant name as typographic wordmark. Support light/dark logo variants.
+## 12. Deployment
+Follow docs/DEPLOYMENT.md: Vite static Pages, Hono Worker, D1, R2 Standard, optional Workers AI. Use pages.dev/workers.dev. Keep separate preview/prod resources. Include commands, migrations, bindings, .dev.vars.example, .env.example and troubleshooting. No secrets committed. If any provider asks for card, stop.
 
-## Color and identity
+## 13. Implementation sequence
+0. Audit repository, reconcile docs/stack, report plan.
+1. Scaffold Vite React, Hono Worker, shared Zod contracts, Drizzle D1; local dev + health endpoint.
+2. Better Auth + identity migration, signup/login/logout, tenant permissions and tests.
+3. Restaurant profile, brand profile, logo upload, palettes, media validation/R2 adapter.
+4. Menu/category/item/variant CRUD and image uploads.
+5. Template registry, normalized contracts, gallery and preview.
+6. Complete Editorial Showcase, snapshot publishing and public route, QR.
+7. Orbital Menu geometry/motion.
+8. Ingredient Universe 2.5D.
+9. AI Service Layer interface, mock provider, optional free Workers AI, quotas and approval.
+10. Endless Table and Menu Magazine.
+11. Remaining templates, CSV, story sections, accessibility/performance.
+Do not build every template at once. Keep app runnable after each vertical slice.
 
-Implement semantic tokens: primary, secondary, accent, page background, surface, elevated surface, primary/secondary/muted text, border, overlay, focus. Include all eight curated palettes in docs/DESIGN_SYSTEM.md and allow custom editing. Optional algorithmic logo color extraction may propose palettes, but must run contrast checks and show real-template preview. Never automatically recolor logo. Client logo upload must support transparent PNG/WebP and sanitized SVG, contain-fit, original retention, preview on light/dark, optimized derivative and contrast warning. Platform wordmark is separate from client logo.
+## 14. Quality gates
+Test auth/session, tenant isolation, roles, upload validation, missing photos, long text, 1/many items, hidden prices, variants, unavailable items, Arabic/RTL, currencies, template switching, orbital no-overlap at phone/tablet/desktop, ingredient label collisions, magazine keyboard/swipe, reduced motion, focus/contrast/screen readers, WebGL/AI/network failure, AI quota/timeouts/approval, original preservation, draft privacy, snapshot rollback and free quota failure behavior.
+Run lint, typecheck, unit/integration/Playwright. Update docs to reflect actual implementation only. Mark incomplete features honestly.
 
-## Templates
-
-Build a template registry; templates must differ in layout and interaction, not merely color. Priorities: Editorial Showcase; Orbital Menu; Ingredient Universe; Endless Table; Menu Magazine; Floating Gallery; Bento Table; Chef's Story; Tasting Journey; Minimalist Menu; 3D Gallery. Future: Sauce/Layer Exploded View and Seasonal Storyboard. Full specifications in docs/TEMPLATES.md.
-
-Editorial Showcase: cinematic hero, brand statement, signature dish, optional story, category navigation and full menu.
-
-Orbital Menu: pizza/burgers/round plates/pastries; calculate elliptical orbit positions from geometry, selected dish moves to focus, text/price/active point transition together; horizontal and vertical variants; group/paginate many items.
-
-Ingredient Universe: drink/plate hero with owner-confirmed ingredients around it; stable anchor positions, depth planes, labels/connectors, coherent lighting/shadows; 2.5D first; never random floating images.
-
-Endless Table: no mandatory landing; native vertical scrolling through editorial item sections, alternating composition and category chapters.
-
-Menu Magazine: editorial spreads, page transition, category jump, keyboard/swipe and mobile list fallback. Start with 2D slide/turn, never sacrifice readability for curl physics.
-
-Other template behavior is fully documented in docs/TEMPLATES.md.
-
-## Motion must be designed, not sprinkled on
-
-For every complex interaction write a motion storyboard: initial/final positions, transform origin, scale/rotation, depth plane, easing/spring, duration/stagger, trigger, interruption, responsive and reduced-motion behavior. Motion for React for normal gesture/spring work; GSAP only for choreography; Three.js only for true 3D. Prefer transform/opacity. No arbitrary float loops, scroll hijacking, endless autoplay, or motion that blocks menu access.
-
-Orbital: x=cx+rx*cos(theta), y=cy+ry*sin(theta); adapt radii to viewport and element bounds; focus item stable and never overlaps text; rotate shortest path; selected scales/moves to focus; others recede; text/price transition together; marker updates; interrupt safely.
-
-Ingredient scene: central glass/plate, front/middle/back planes, stable label anchors and connector lines; coherent perspective, light direction and contact shadows; ingredients enter deliberate paths with stagger; hero stays dominant; no crossing labels; simplify on mobile.
-
-Magazine: consistent transform origin and direction; content never mirrored or unreadable; keyboard, swipe and category jump; reduced motion dissolves or instantly changes page.
-
-## Turning uploaded photos into moving objects
-
-Do not claim one photo becomes a perfect 3D model. Level 1 MVP: commercially cleared pretrained segmentation/background removal -> transparent cutout -> edge cleanup -> CSS 2.5D transforms, shadow and subtle parallax. Level 2: commercially cleared cautious depth layers and small parallax; preserve flat fallback. Level 3 future: pretrained image-to-3D; hidden sides are guessed/hallucinated, so decorative only, owner approval, never factual product photo. For food, Level 1/2 is usually the right approach.
-
-## Restaurant story and information
-
-Support optional About/Story, chef/founder, philosophy/sourcing, gallery, signature items, location/map link, hours, contact, website, social links, announcements. Template declares support. Full menu always easy to reach.
-
-## Security and publishing
-
-Tenant isolation via RLS and server authorization. Safe money representation. Validate upload and sanitize SVG. Public route reads immutable published snapshot only; drafts are authenticated/noindex. Keep last-good publication for rollback. Secrets server-side. Do not add ordering/payments/delivery/reservations/POS in MVP.
-
-## Implementation order
-
-1 Scaffold app/environment/design tokens.
-2 Supabase auth/schema/migrations/RLS.
-3 Restaurant profile, logo upload, palette editor.
-4 Menu/category/item CRUD and media upload.
-5 Template registry/contracts.
-6 Complete Editorial Showcase.
-7 Draft preview, immutable publish, public route.
-8 Orbital Menu geometry and motion.
-9 Ingredient Universe 2.5D.
-10 AI Service Layer skeleton with mock provider and job records; no model downloads yet.
-11 Add one local text model and one segmentation model only after hardware/license review; implement owner approval.
-12 CSV import, QR, story sections.
-13 Remaining templates and optional image generation/3D only if budget/hardware justify them.
-
-Do not start all templates simultaneously. Complete and test each vertical slice.
-
-## Quality gates
-
-Run typecheck, lint, unit and E2E tests. Test mobile/tablet/desktop; long names/descriptions; missing photos; one/many items; variants; hidden prices; keyboard; reduced motion; contrast; focus; overflow; layout shift; image distortion; real phone animation performance; tenant isolation; public draft privacy; original image preservation; AI approval; model license records; behavior with AI unavailable. Update README/docs to describe actual behavior and label incomplete features honestly.
-
-## Working style
-
-Make sensible design decisions without asking about every detail. Ask before meaningful recurring costs or external account/secret requirements. Never invent credentials. Provide .env.example and exact setup. Keep commits focused and report what is implemented, what remains, and how to run it. The wow factor must come from composition, precise geometry, depth, lighting, typography, photography and smooth purposeful motion while remaining fast and usable.
+## 15. Working style and success definition
+First provide repo audit + phased plan. Do not ask routine decisions; ask only for external credentials, recurring costs, card, irreversible data or scope. Never invent secrets or claim deployment without verification. Small coherent commits. Report changed files, tests, URLs only if verified, limitations and next step.
+Success: restaurant owner can create branded menu with logo, palette, item photos/details, select genuinely distinct template, preview, publish and share online with no card or paid service; the result feels art-directed with excellent proportions, lighting, motion and typography.
