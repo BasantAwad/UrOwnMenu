@@ -1,28 +1,46 @@
 # Roadmap and Definition of Done
 
-## Phase 0 — Validate
-Confirm first target segment, create prototypes for Editorial Showcase/Orbital/Ingredient Universe, test real menus/photos with owners, validate naming and scope.
+## Phase 0 — Audit and free-host validation
+Inspect repository and reconcile all docs with the $0 stack. Verify Cloudflare signup and product activation do not ask for a card. Do not bypass payment prompts. Create a UI prototype for Editorial Showcase, Orbital and Ingredient Universe using owner-provided visual references. Exit: stack and no-card deployment path documented; no paid dependencies.
 
 ## Phase 1 — Foundation
-Next.js/TypeScript, Supabase auth/schema/RLS, restaurant profile, client logo upload, palette editor, menu/category/item CRUD, original media upload. Exit: owner can create restaurant and add items securely.
+React + TypeScript + Vite frontend, Hono Worker API, shared Zod contracts, Drizzle + D1, local development and health endpoint. Generate Better Auth identity migration. Exit: app runs locally and health endpoint works.
 
-## Phase 2 — First publication
-Template registry, semantic design tokens, complete Editorial Showcase or Minimalist Menu, public renderer, draft preview, immutable published snapshot, public slug, QR. Exit: owner-to-public menu works end to end; draft doesn't mutate live version; rollback works.
+## Phase 2 — Auth and tenant model
+Better Auth signup/login/logout, secure sessions, restaurant creation, owner membership, tenant authorization and tests. Exit: cross-tenant access tests pass.
 
-## Phase 3 — Signature experiences
-Orbital Menu, Ingredient Universe 2.5D, Endless Table, mobile-specific layouts, keyboard/touch/reduced motion, real-device profiling. Exit: templates are genuinely distinct and usable.
+## Phase 3 — Restaurant brand and menu studio
+Restaurant profile, client logo upload, palettes, menus/categories/items/variants, image upload to R2, immutable originals. Exit: owner can manage a complete menu and brand.
 
-## Phase 4 — AI/media
-FastAPI worker, provider adapters, deterministic derivatives, quality analysis/crop/alt text, background removal, 2.5D cutout, owner review, optional generative scene edit after preservation testing. Exit: original retained, approval required, cost tracked, retries safe.
+## Phase 4 — First publication
+Template registry, complete Editorial Showcase, preview, immutable published snapshots, public slug route and QR. Exit: owner-to-public menu works end to end; drafts do not mutate live menu; rollback works.
 
-## Phase 5 — Onboarding and expansion
-CSV import, template recommendations, Menu Magazine, Bento, Floating Gallery, Chef's Story, Tasting Journey, story sections, gallery, hours/location/contact, multi-language/RTL.
+## Phase 5 — Signature experiences
+Orbital Menu geometry/motion, Ingredient Universe 2.5D, Endless Table and Menu Magazine. Exit: distinct responsive templates work on real mobile devices and respect reduced motion.
 
-## Phase 6 — Commercial readiness
-Custom domains/SSL, billing only after pricing validation, quotas, admin, backups, monitoring, privacy/terms/image rights/provider disclosures, accessibility/security review.
+## Phase 6 — Optional AI/media
+Provider interface, mock provider, free-eligible Workers AI only after account/model test, quotas and approval; browser Canvas media tools; optional browser ONNX segmentation only after license/performance review. Exit: original retained, approval required, no paid fallback, graceful AI-off behavior.
+
+## Phase 7 — Onboarding and expansion
+CSV import, template recommendations, Bento, Floating Gallery, Chef's Story, Tasting Journey, Minimalist, optional 3D Gallery, story/gallery/hours/location/contact, Arabic/RTL.
+
+## Phase 8 — Readiness
+Security/privacy/accessibility review, data export/delete, backup process, quota monitoring, terms and image-rights guidance. Custom domains, payments and commercial billing only after owner has a budget and explicitly approves.
 
 ## Definition of done for every template
-Uses normalized data; config schema validated; one/many item, long text, missing photo, variants and hidden prices handled; intentional desktop/tablet/mobile; keyboard/touch/screen reader/reduced motion; optimized responsive images; profiled animation on real phone; static fallback for WebGL/page effects; optional story sections; no overflow or clipped content.
+Normalized data; validated config; one/many items; long text; missing photos; variants and hidden prices; intentional desktop/tablet/mobile; keyboard/touch/screen reader/reduced motion; optimized responsive images; real-phone performance; static fallback; optional story sections; no clipped content or overflow.
 
-## First tickets
-1 Scaffold app and environment validation. 2 Supabase schema/RLS. 3 Auth/restaurant creation. 4 Logo and palette settings. 5 Menu/category/item CRUD. 6 Secure media upload. 7 Template registry. 8 First complete template. 9 Draft preview/publish snapshots. 10 Public menu and QR. 11 E2E owner-to-publication. 12 Orbital. 13 AI job service after publishing works.
+## First implementation tickets
+1. Audit and scaffold Vite/Hono/D1.
+2. Better Auth schema and tenant authorization.
+3. Restaurant and brand profile.
+4. Logo upload and palette settings.
+5. Menu/category/item/variant CRUD.
+6. R2 media upload and validation.
+7. Template registry.
+8. Editorial Showcase.
+9. Draft preview, publish snapshots, public menu and QR.
+10. Owner-to-public E2E test.
+11. Orbital Menu.
+12. Ingredient Universe.
+13. AI service abstraction and optional free model only after publication is working.
