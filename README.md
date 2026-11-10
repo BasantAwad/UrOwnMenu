@@ -12,7 +12,8 @@ Restaurant owners add or import menu items, upload clear photos and their restau
 - docs/DESIGN_SYSTEM.md — palettes, logo upload, typography, layout, image art direction.
 - docs/TEMPLATES.md — all template concepts and behaviors.
 - docs/MOTION_AND_INTERACTION.md — geometry, motion choreography, 2.5D/3D, accessibility.
-- docs/AI_MEDIA_PIPELINE.md — pretrained models, image improvement, cutouts, AI safety.
+- docs/AI_MEDIA_PIPELINE.md — self-hosted AI Service Layer, local models, image improvement, cutouts and AI safety.
+- docs/MODEL_CATALOG.md — model shortlist, license checks, hardware notes and release gates.
 - docs/ARCHITECTURE.md — stack, architecture, publishing, security.
 - docs/ROADMAP.md — phases and acceptance criteria.
 - docs/INSPIRATION.md — every original inspiration URL and visual interpretation.
@@ -20,7 +21,7 @@ Restaurant owners add or import menu items, upload clear photos and their restau
 
 ## Recommended stack
 
-Next.js App Router, React, TypeScript, Tailwind CSS and CSS variables; Motion for React; GSAP only for complex choreographies; Three.js/React Three Fiber only for true 3D; Supabase PostgreSQL/Auth/Storage/RLS; FastAPI for AI/media jobs; Pillow/OpenCV for deterministic processing; Zod, Pydantic, Vitest, Playwright, pytest. Begin as a modular monolith plus a separate AI/media worker, not a fleet of microservices.
+Next.js App Router, React, TypeScript, Tailwind CSS and CSS variables; Motion for React; GSAP only for complex choreographies; Three.js/React Three Fiber only for true 3D; Supabase PostgreSQL/Auth/Storage/RLS; FastAPI AI Service Layer with Ollama/Pydantic AI for local pretrained models; Pillow/OpenCV and ONNX Runtime for deterministic/local processing; Zod, Pydantic, Vitest, Playwright, pytest. Begin as a modular monolith plus a separate AI/media worker, not a fleet of microservices.
 
 ## Initial template collection
 
@@ -28,7 +29,7 @@ Editorial Showcase, Orbital Menu, Ingredient Universe, Endless Table, Menu Magaz
 
 ## MVP
 
-Owner creates a restaurant, uploads logo, chooses palette, creates menus/categories/items, uploads photos, selects a template, previews mobile and desktop, publishes a versioned menu, and shares URL/QR. AI is optional; original content remains usable without AI credentials.
+Owner creates a restaurant, uploads logo, chooses palette, creates menus/categories/items, uploads photos, selects a template, previews mobile and desktop, publishes a versioned menu, and shares URL/QR. AI is optional; original content remains usable without AI credentials. The target is self-hosted pretrained models rather than mandatory paid inference APIs.
 
 ## Scope boundary
 
