@@ -34,7 +34,7 @@ No card, paid billing, auto-upgrade or paid fallback. Free quotas are limited an
 ## MVP exclusions
 Ordering, checkout, payments, delivery, reservations, POS, inventory, loyalty, customer accounts and custom domains.
 
-## Status
+## Current status
 Documentation and architecture foundation. Implement in vertical slices; complete one owner-to-public-menu journey before expanding all templates.
 
 Repository: https://github.com/BasantAwad/UrOwnMenu
