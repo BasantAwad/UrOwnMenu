@@ -1,42 +1,41 @@
-# Original Inspiration Links and Reference Register
+# UrOwnMenu — Original Inspiration & Visual Reference Bible
 
-These are the exact links supplied by the product owner. Preserve every URL. Pinterest short links may redirect or require login; open them in a browser if possible, record actual observations, and do not invent details when inaccessible.
+Preserve every URL exactly. These are design references, not assets to copy. Inspect links if accessible; Pinterest may require login or redirect. Never invent details about inaccessible pins.
 
-## 1. Wove mobile navigation screenshot
-
-The owner attached a Wove mobile screenshot from wove.com. Visible: minimal monochrome layout; WOVE wordmark upper left and close icon upper right; large thin elliptical curve entering from left; small orbit points and larger active black point; large section number “01” with title/description; other numbers recede along curve; generous negative space. Use as inspiration for numbered orbital navigation, scale hierarchy, whitespace, and calm spatial motion. Do not copy Wove logo or exact layout.
+## 1. Wove mobile navigation (owner-provided screenshot)
+Website shown: https://wove.com/
+The owner attached a tall mobile Safari screenshot in the original conversation. If unavailable to the coding agent, ask for it to be placed at `docs/assets/inspiration/wove-mobile-navigation.png`; until then use this description: restrained pale grey background, monochrome typography, small wordmark top-left, close control top-right, thin elliptical orbit entering from left, tiny orbit markers and one prominent active black marker, oversized active “01”, bold title and light supporting copy beside it, other numbers receding in muted grey, generous negative space and asymmetry.
+Translate into spatial/numbered category navigation, orbit markers, scale hierarchy and calm movement. Calculate positions responsively; active content remains readable. Do not copy WOVE's logo, exact layout, typeface or coordinates.
 
 ## 2. Food orbital composition
+Exact image: https://i.pinimg.com/1200x/a6/a3/df/a6a3df148804d2b961da16495f5f1f46.jpg
+![Food orbital inspiration](https://i.pinimg.com/1200x/a6/a3/df/a6a3df148804d2b961da16495f5f1f46.jpg)
+Owner describes a rotating wheel/orbit suited to round dishes (pizza, hamburgers), with selected dish and description together. Orbit can sit sideways or at bottom. Implement Orbital Menu with horizontal, vertical and centered variants. Active image moves to a focal area; title, description, price and marker transition together. Use actual ellipse geometry and collision-aware responsive layout. Group/paginate large menus; never cram every item into a tiny ring.
 
-https://i.pinimg.com/1200x/a6/a3/df/a6a3df148804d2b961da16495f5f1f46.jpg
+## 3. Rotating drink with floating ingredients
+Exact Pinterest link: https://pin.it/6cUOzJgzo
+Owner describes a rotating drink with ingredients floating around it. Implement Ingredient Universe: central glass remains hero; owner-confirmed ingredient cutouts occupy stable front/middle/back planes with deliberate scale, perspective, coherent lighting, contact shadows, labels and connector lines. Rotation/drag changes composition coherently. No random floating PNGs and never infer ingredients from pixels. Inspect link if possible; if inaccessible rely only on owner's description.
 
-Owner describes a rotating wheel/orbit for round dishes such as pizza or hamburgers, selected food with description beside it. Orbit may be sideways or at bottom depending on preference. Interpret as elliptical food showcase with selected item and information panel.
+## 4. Aesthetic hero / landing page then normal menu
+Exact links:
+- https://pin.it/2q7qgf3Sr
+- https://pin.it/77FSUiu6H
+- https://pin.it/2QTrkOGyS
+Owner wants an aesthetic hero with food/drink, then a conventional product/menu view. Implement Editorial Showcase/Floating Gallery: purposeful hero, restaurant identity, concise statement, clear Explore Menu action, signature items, categories/full menu and optional story/gallery/location. Menu must be reachable immediately; no long decorative intro. Inspect links if possible; don't hallucinate inaccessible content.
 
-## 3. Drink with floating ingredients
-
-https://pin.it/6cUOzJgzo
-
-Owner describes a rotating drink with ingredients floating around it. Ingredients should be arranged intentionally and may respond to rotation/selection. Use only owner-confirmed ingredients. The goal is believable dimensional composition, not random floating PNGs.
-
-## 4. Landing-page aesthetic product presentation
-
-https://pin.it/2q7qgf3Sr
-https://pin.it/77FSUiu6H
-https://pin.it/2QTrkOGyS
-
-Owner wants an aesthetic hero/landing page with a large food/drink visual followed by a conventional product/menu view. Keep menu access clear.
-
-## 5. Continuous straight-line menu
-
-https://pin.it/f0Ykn7XLS
-https://pin.it/7swRilPDK
-
-Owner describes no separate landing page, just continuous scrolling of items and their information. Useful terms: editorial scrolling menu, immersive vertical menu, continuous product showcase. Implement as Endless Table with native scroll, alternating image/text composition and category chapters.
+## 5. Continuous straight-line scrolling menu
+Exact links:
+- https://pin.it/f0Ykn7XLS
+- https://pin.it/7swRilPDK
+Owner wants no separate landing page: continuous scrolling items and information. Useful term: editorial scrolling menu / immersive vertical menu / continuous product showcase. Implement Endless Table with native vertical scroll, alternating image/text composition, deliberate scale/alignment changes, category chapters, clear prices, compact category jump. Never hijack scroll.
 
 ## 6. Magazine concept
+No separate URL was supplied. Owner describes items showcased like models in a magazine with folding/page-turn animation. Implement Menu Magazine with editorial spreads, page numbers, category tabs, page transitions and item details. Start with a robust 2D slide/hinge/fold illusion; no realistic page-curl dependency. Text must never mirror or become unreadable. Mobile uses swipe/vertical spreads and accessible list fallback.
 
-Owner described a menu where dishes are showcased like models in a magazine, with folding/page-turn animation. No separate URL was supplied. Implement Menu Magazine with editorial spreads and a lightweight 2D page transition first; realistic page curl is optional.
+## 7. Additional original template ideas
+Bento Table, Chef's Story, Tasting Journey, Minimalist Menu, 3D Gallery, Sauce/Layer Exploded View, Seasonal Storyboard.
 
-## 7. Reference rules
+## 8. Visual acceptance
+Wow factor = exact proportions, geometry, perspective, depth, coherent light/shadows, typography, whitespace and choreographed motion. Reject generic repeated cards, random floating images, arbitrary blur/shadows, inconsistent light, label collisions, stretched logos, distorted dishes, fake facts, motion that blocks reading. Every complex animation specifies start/end, transform origin, dimensions, depth, easing, duration, stagger, trigger, interruption, responsive and reduced-motion behavior.
 
-References are inspiration, not reusable assets. Do not copy logos, art, proprietary code, or pixel-perfect layouts. Extract principles: composition, hierarchy, negative space, focal point, depth, light, interaction, transitions, typography. If a Pinterest pin is inaccessible, say so rather than inventing what it contains. The Wove screenshot is attached in original conversation; user may need to provide it to the coding agent if not accessible in its workspace.
+Do not hotlink reference images into customer menus or copy artwork/logos/code. Direct i.pinimg image is embedded for quick review; keep every Pinterest short URL verbatim even if preview is unavailable.
