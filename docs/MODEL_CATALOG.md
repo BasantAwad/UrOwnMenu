@@ -1,37 +1,28 @@
-# Model Catalog and Commercial License Review
+# Model Catalog — free-first and license-aware
 
-This catalog is a shortlist for evaluation, not blanket approval. Before production, pin a commit/revision, read the exact model card and weight license, inspect upstream code/dependencies, verify commercial use and attribution, test the actual outputs, and record the review date. If unclear, do not ship the model.
+Candidates only; not blanket approval. Production MVP may use only Workers AI model IDs confirmed Free-eligible for this account. Check live catalog and test before enabling. Current documented free allocation: 10,000 Neurons/day. Some models require Workers Paid.
 
-| Task | Candidate | Model/Code license signal | Recommendation / caveat |
-|---|---|---|---|
-| Local text tasks | https://huggingface.co/Qwen/Qwen3-4B | Model card: Apache-2.0 | Candidate for owner-fact-grounded descriptions, categorization and structured suggestions. Benchmark on target hardware. |
-| Local vision tasks | https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct | Model card: Apache-2.0 | Candidate for visual quality, crop suggestions and draft alt text. Never use to certify ingredients/allergens/nutrition. |
-| Alternative vision | https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct | Verify exact current card and license | Alternative if compatibility or hardware benchmarks are better. |
-| Segmentation framework | https://github.com/danielgatis/rembg | Repository MIT; model weights have separate licenses | Evaluate U2-Net/ISNet/BiRefNet weights individually. Do not assume package license covers weights. |
-| Segmentation alternative | https://github.com/TermiSenpai/DeleteBackground | Wrapper app uses rembg/ONNX | Useful implementation reference, not automatic commercial approval for every model it bundles. |
-| Image enhancement | https://github.com/Maty3k/Upscaler | Repository states Apache-2.0; audit each downloaded weight/dependency | Candidate for local upscale/restore. Prefer conservative deterministic corrections first. |
-| Image generation | https://huggingface.co/black-forest-labs/FLUX.1-schnell | Model card: Apache-2.0 | Optional heavy 12B model. Use only if server resources support it. |
-| Image-to-3D | https://huggingface.co/microsoft/TRELLIS.2-4B | Model card lists MIT | Future experiment only; large weights and heavy inference; output is approximate, one image cannot reveal hidden surfaces. |
-| Depth estimation (blocked) | https://huggingface.co/depth-anything/Depth-Anything-V2-Base-hf | Model card lists CC-BY-NC-4.0 | Do not use commercially under this license. Find a commercially permitted alternative before enabling depth estimation. |
+## MVP candidates
+| Task | Candidate | Gate |
+|---|---|---|
+| Text menu copy/organizing | `@cf/meta/llama-3.1-8b-instruct-fp8` or smaller free model | Confirm Free account access and output quality |
+| Vision / alt text | `@cf/llama-3.2-11b-vision-instruct` | Optional; confirm Free access and license |
+| Template recommendation | Deterministic rules first | Works with AI off |
+| Image adjustments | Browser Canvas | No inference |
+| Background removal | Optional browser ONNX | Exact weight license, browser RAM/performance and download size must pass |
 
-## Runtime and orchestration
+Live catalog: https://developers.cloudflare.com/workers-ai/models/
+Pricing: https://developers.cloudflare.com/workers-ai/platform/pricing/
 
-- Ollama: local model runtime, first choice for easy developer setup; https://ollama.com/ and https://github.com/ollama/ollama
-- Pydantic AI: typed, model-agnostic orchestration; supports self-hosted Ollama; https://pydantic.dev/docs/ai/models/ollama/
-- FastAPI: our application-owned AI Service Layer and job endpoints.
-- ONNX Runtime: efficient inference for compatible segmentation/vision models.
-- Pillow/OpenCV: deterministic image preprocessing and postprocessing.
+## Future/local-only candidates — not hosted MVP
+- Qwen3-4B: https://huggingface.co/Qwen/Qwen3-4B
+- Qwen3-VL-4B-Instruct: https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct
+- rembg: https://github.com/danielgatis/rembg (wrapper license does not cover every model weight)
+- Upscaler: https://github.com/Maty3k/Upscaler (audit exact weights/dependencies)
+- FLUX.1 Schnell: https://huggingface.co/black-forest-labs/FLUX.1-schnell (heavy; future)
+- TRELLIS.2: https://huggingface.co/microsoft/TRELLIS.2-4B (heavy, approximate 3D; future)
 
-## Required review fields
+For every enabled model record immutable revision, model/weight license, code/dependency licenses, commercial-use permission, attribution, size, RAM/VRAM, known failures, evaluation and review date. Do not infer weight license from wrapper license. Block unclear/non-commercial models.
 
-For every model actually enabled, add:
-- Exact Hugging Face repo ID and immutable revision/commit.
-- Model weight license and upstream source-code license.
-- Commercial use: approved / blocked / legal review required.
-- Attribution/notice requirements.
-- Model size, RAM, VRAM, CPU/GPU compatibility and measured latency.
-- Task-specific evaluation results and known failure modes.
-- Provider/model version, date reviewed, reviewer.
-- Removal/replacement plan.
-
-No hosted inference API is required for MVP. Download weights to persistent worker storage. Model availability on Hugging Face does not mean hosted inference is free, nor does an open-source wrapper automatically make its weights commercially usable.
+## Agent policy
+Bounded Menu Copy Assistant, Menu Organizer, Template Recommender, Visual Review Assistant and browser Media Preparation only. No autonomous tool-using agent. No agent can publish or modify data. Owner approval required. Never infer/certify allergens, ingredients, nutrition or dietary suitability from photos.
