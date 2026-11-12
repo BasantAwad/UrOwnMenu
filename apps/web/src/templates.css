@@ -1,0 +1,3955 @@
+/* ============================================
+   UrOwnMenu — Published template system
+   ============================================
+
+   Design decisions are evidence-based. See docs/DESIGN_DECISIONS.md for the
+   measurements behind them.
+
+   Band rhythm follows the observed reference structure: distinct bands with
+   alternating surface treatments rather than one flat page. The hero uses a
+   scrim so type stays readable over photography. Hover states exist because
+   the reference sites carry dozens of them.
+
+   Motion is CSS keyframe only - the reference motion census showed
+   css-keyframe motion with no scroll-trigger library, so no extra runtime
+   dependency is pulled in.
+   ============================================ */
+
+.tpl {
+  --tpl-bg: var(--page-background, #f5eee9);  --tpl-surface: var(--surface, #fffdf9);
+  --tpl-elevated: var(--surface-elevated, #ffffff);
+  --tpl-primary: var(--brand-primary, #2b211d);
+  --tpl-secondary: var(--brand-secondary, #594239);
+  --tpl-accent: var(--brand-accent, #b77a45);
+  --tpl-text: var(--text-primary, #1a1a1a);
+  --tpl-text-2: var(--text-secondary, #594239);
+  --tpl-muted: var(--text-muted, #a99a8d);
+  --tpl-border: var(--border, #ded4c7);
+  --tpl-on-primary: var(--on-primary, #fffdf9);
+
+  /*
+   * Accessibility-adjusted variants.
+   *
+   * The palette's muted tone (#a99a8d on #f4efe7) measures 2.38:1 and the
+   * accent (#b77a45) measures 3.12:1 - both below the 4.5:1 WCAG AA
+   * threshold for normal-size text. These two tokens are the darkened
+   * equivalents, so every piece of text clears AA while keeping the brand
+   * hue.
+   */
+  --tpl-muted-ink: var(--tpl-text-2);
+  --tpl-accent-ink: color-mix(in srgb, var(--tpl-accent) 68%, var(--tpl-text));
+
+  /* Rhythm: bands are deliberately large so the page reads as chapters. */
+  --band-pad: clamp(28px, 6vw, 96px);
+  --band-gap: clamp(56px, 9vw, 132px);
+
+  background: var(--tpl-bg);
+  color: var(--tpl-text);
+  font-family: var(--tpl-body, system-ui, -apple-system, 'Segoe UI', sans-serif);
+  min-height: 100%;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tpl img {
+  display: block;
+  max-width: 100%;
+}
+
+/*
+ * Keyboard focus must always be visible on the published menu. `:focus` is
+ * used rather than only `:focus-visible` so the ring is never suppressed,
+ * including in engines that do not support :focus-visible.
+ */
+.tpl :focus {
+  outline: 2px solid var(--tpl-accent-ink);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Display type. The references pair a high-contrast serif with a plain
+   sans for body copy, so the templates do the same. */
+.tpl h1,
+.tpl h2,
+.tpl h3 {
+  font-family: var(--tpl-display, Georgia, 'Times New Roman', serif);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+}
+
+.tpl p {
+  margin: 0;
+}
+
+/* ============================================
+   Public shell
+   ============================================ */
+
+/* Visually hidden but available to assistive technology. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.public {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--page-background, #f5eee9);
+}
+
+.public__canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Template roots fill the canvas so full-bleed templates can stretch. */
+.public__canvas > .tpl {
+  flex: 1;
+}
+
+.public__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 24px;
+  padding: 20px var(--band-pad, 40px);
+  background: var(--surface, #fffdf9);
+  border-top: 1px solid var(--border, #ded4c7);
+  color: var(--text-secondary, #594239);
+  font-size: 13px;
+}
+
+.public__version {
+  color: var(--text-secondary, #594239);
+  font-variant-numeric: tabular-nums;
+}
+
+.public__by {
+  color: var(--text-secondary, #594239);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+
+.public__by:hover {
+  color: var(--brand-primary, #2b211d);
+  border-bottom-color: currentColor;
+}
+
+.public__missing {
+  max-width: 440px;
+  text-align: center;
+  background: var(--surface, #fffdf9);
+  border: 1px solid var(--border, #ded4c7);
+  border-radius: 14px;
+  padding: 34px;
+}
+
+/* ============================================
+   Shared pieces
+   ============================================ */
+
+/*
+ * An operational label in a monospaced face. The measured references
+ * (Mollie, Milanote) use a mono uppercase layer above sections, media and
+ * categories to separate "structure" from "content".
+ *
+ * A system mono stack is used rather than a downloaded webfont: the same
+ * effect at zero bytes of mobile data.
+ */
+.tpl-label {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tpl-muted-ink);
+  margin-bottom: 8px;
+}
+
+.tpl-label--accent {
+  display: inline-block;
+  color: var(--tpl-accent-ink);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 3px 11px;
+  margin-bottom: 12px;
+}
+
+/* Cutouts carry transparency, so they must not sit on an opaque fill or
+   they end up inside a visible white box, and they must never be cropped
+   with `cover` - the transparent margin becomes a white rectangle.
+
+   The selector is deliberately specific enough to beat the per-template
+   `object-fit: cover` rules below.
+
+   The shadow uses `filter: drop-shadow` rather than `box-shadow`: a box
+   shadow follows the element's border box and would paint a visible
+   rectangle around a transparent PNG, while drop-shadow follows the
+   alpha channel and traces the actual subject. */
+.tpl img.is-cutout {
+  background: transparent !important;
+  object-fit: contain;
+  box-shadow: none;
+  filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.34));
+}
+
+/* A frame that holds a cutout drops its own fill too. */
+.tpl-editorial__itemMedia:has(img.is-cutout),
+.tpl-editorial__signatureMedia:has(img.is-cutout),
+.tpl-endless__media:has(img.is-cutout),
+.tpl-magazine__media:has(img.is-cutout),
+.tpl-ingredient__hero:has(img.is-cutout) {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Images are never cropped: the owner frames them in the media editor. */
+.tpl .photo {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Section heading, used by every template. */
+.tpl-sectionHead {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  margin-bottom: clamp(24px, 4vw, 46px);
+}
+
+.tpl-sectionIndex {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--tpl-accent-ink);
+}
+
+.tpl-sectionTitle {
+  font-size: clamp(26px, 4.4vw, 46px);
+  margin: 0;
+}
+
+.tpl-sectionRule {
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.16;
+}
+
+/* Prices line up on a tabular baseline so they can be scanned. */
+.tpl-price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tpl-eyebrow {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--tpl-muted-ink);
+  margin: 0 0 14px;
+}
+
+/* ============================================
+   Motion parts
+   ============================================ */
+
+/*
+ * Reading progress. The reference implementation scales the bar on the X
+ * axis from the scroll ratio.
+ */
+.scrollProgress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--tpl-accent, #b77a45);
+  transform-origin: 0 50%;
+  z-index: 60;
+  pointer-events: none;
+}
+
+/*
+ * A single bar that slides to the selected tab, rather than an underline
+ * that appears and disappears. Reference transition: left 250ms, width 250ms.
+ */
+.tabIndicator {
+  position: relative;
+}
+
+.tabIndicator__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--tpl-accent-ink);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* The hero image is revealed by a clip-path wipe. */
+.tpl-editorial__heroReveal {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+/* ============================================
+   Ambient (motion-ref 11)
+   ============================================ */
+
+/*
+ * Light sweep. A soft highlight travels across a surface, which reads as
+ * premium without adding weight. Reference: a 110 degree gradient swept on
+ * a 3 second loop.
+ */
+.tpl-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.tpl-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  animation: tplSweep 5.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes tplSweep {
+  0% { transform: translateX(-120%); }
+  55%, 100% { transform: translateX(120%); }
+}
+
+/*
+ * Breathing glow for the active marker. Reference: a 3 second ease-in-out
+ * loop. Applied to the round thumbnail so the shadow traces a circle.
+ */
+@keyframes tplOrbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes tplOrbitCounter {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes tplGlowPulse {
+  0%, 100% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--tpl-primary) 16%, transparent); }
+  50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--tpl-primary) 5%, transparent); }
+}
+
+/* ============================================
+   1. Editorial Showcase
+   ============================================ */
+
+.tpl-editorial {
+  padding-bottom: 0;
+}
+
+/* --- Hero: type on ink, photography bleeding off the right edge --- */
+.tpl-editorial__hero {
+  position: relative;
+  background: var(--tpl-primary);
+  color: var(--tpl-on-primary);
+  display: grid;
+  grid-template-columns: minmax(0, var(--hero-text, 1.02fr)) minmax(0, var(--hero-media, 0.98fr));
+  align-items: stretch;
+  gap: clamp(24px, 4vw, 64px);
+  /* No right padding: the photograph owns the edge. */
+  padding: 0 0 0 var(--band-pad);
+  min-height: min(84vh, 780px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.tpl-editorial__heroCopy {
+  position: relative;
+  z-index: 2;
+  max-width: 620px;
+  align-self: center;
+  padding-block: clamp(48px, 8vw, 116px);
+}
+
+.tpl-editorial__heroCopy .tpl-eyebrow {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.tpl-editorial__title {
+  font-size: clamp(38px, 7.4vw, 82px);
+  margin: 0 0 18px;
+  color: #fff;
+  text-wrap: balance;
+}
+
+.tpl-editorial__tagline {
+  font-size: clamp(16px, 2vw, 20px);
+  max-width: 44ch;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+/* The media panel: full-height photograph, no card chrome. */
+.tpl-editorial__heroMedia {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  justify-self: stretch;
+}
+
+.tpl-editorial__heroMedia::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    90deg,
+    var(--tpl-primary) 0%,
+    color-mix(in srgb, var(--tpl-primary) 55%, transparent) 18%,
+    transparent 42%
+  );
+  pointer-events: none;
+}
+
+.tpl-editorial__heroMedia img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 52%;
+}
+
+/*
+ * A cutout must stay transparent and uncropped, so it reverts to a contained
+ * subject on the ink ground with a key light, and the edge blend is dropped.
+ */
+.tpl-editorial__heroMedia:has(img.is-cutout) {
+  display: grid;
+  place-items: center;
+  justify-self: end;
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  min-height: 0;
+  align-self: center;
+  padding-right: var(--band-pad);
+}
+
+.tpl-editorial__heroMedia:has(img.is-cutout)::before {
+  display: none;
+}
+
+.tpl-editorial__heroMedia:has(img.is-cutout) img {
+  position: relative;
+  inset: auto;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(62vh, 560px);
+  object-fit: contain;
+  border-radius: 12px;
+  background: transparent;
+  filter: drop-shadow(0 34px 42px rgba(0, 0, 0, 0.62));
+}
+
+/* A soft key light behind the media so it is not floating on flat ink. */
+.tpl-editorial__heroGlow {
+  position: absolute;
+  inset: -18% -10%;
+  background: radial-gradient(
+    circle at 50% 45%,
+    color-mix(in srgb, var(--tpl-accent) 30%, transparent) 0%,
+    transparent 62%
+  );
+  pointer-events: none;
+}
+
+/* The primary action. */
+.tpl-editorial__heroActions {
+  margin-top: 32px;
+}
+
+.tpl-editorial__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 26px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--tpl-primary);
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tpl-editorial__cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.6);
+}
+
+.tpl-editorial__cta span {
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tpl-editorial__cta:hover span {
+  transform: translateY(3px);
+}
+
+/* --- Signature dishes --- */
+.tpl-editorial__signature {
+  padding: var(--band-gap) var(--band-pad);
+  background: var(--tpl-bg);
+}
+
+.tpl-editorial__signatureRow {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: clamp(20px, 2.6vw, 40px);
+  align-items: stretch;
+}
+
+/* Asymmetric editorial block: one feature, two supporting rows. */
+.tpl-editorial__signatureItem {
+  display: flex;
+  flex-direction: column;
+  grid-column: span 5;
+}
+
+.tpl-editorial__signatureItem:first-child {
+  grid-column: 1 / span 7;
+  grid-row: 1 / span 2;
+}
+
+.tpl-editorial__signatureItem:nth-child(2) {
+  grid-column: 8 / span 5;
+  grid-row: 1;
+}
+
+.tpl-editorial__signatureItem:nth-child(3) {
+  grid-column: 8 / span 5;
+  grid-row: 2;
+}
+
+/* Only two supporting items exist; with more, let them flow. */
+.tpl-editorial__signatureItem:nth-child(n + 4) {
+  grid-column: span 4;
+  grid-row: auto;
+}
+
+.tpl-editorial__signatureMedia {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--tpl-surface);
+  aspect-ratio: 4 / 5;
+  max-height: 380px;
+  margin-bottom: 18px;
+}
+
+/*
+ * The image fills the frame absolutely. As a centred grid item, a percentage
+ * height resolved against a content-sized row, so a portrait photo rendered
+ * at its intrinsic height (1085px inside a 414px frame) and was clipped by
+ * `overflow: hidden` instead of being contained. Absolute fill makes the
+ * frame's geometry authoritative for both photos and generated plates.
+ */
+.tpl-editorial__signatureMedia img,
+.tpl-editorial__signatureMedia .tpl-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tpl-editorial__signatureMedia:has(img.is-cutout) img {
+  object-fit: contain;
+  padding: 6%;
+}
+
+/*
+ * Generated plates carry their own linework and no ground, so the frame must
+ * not paint a pale card behind them.
+ */
+.tpl-editorial__signatureMedia.is-generated,
+.tpl-editorial__signatureMedia:has(> .tpl-poster) {
+  background: transparent;
+}
+
+/*
+ * Robust layouts for the signature row, whatever the owner supplied:
+ * one item spans the page; two items become an even pair; three or more use
+ * the original asymmetric feature + supporting rows.
+ */
+.tpl-editorial__signatureRow:has(> .tpl-editorial__signatureItem:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tpl-editorial__signatureRow:has(> .tpl-editorial__signatureItem:only-child)
+  .tpl-editorial__signatureItem {
+  grid-column: 1 / -1;
+  grid-row: auto;
+}
+
+.tpl-editorial__signatureRow:has(> .tpl-editorial__signatureItem:nth-child(2):last-child) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.tpl-editorial__signatureRow:has(> .tpl-editorial__signatureItem:nth-child(2):last-child)
+  .tpl-editorial__signatureItem {
+  display: flex;
+  flex-direction: column;
+  grid-column: auto;
+  grid-row: auto;
+  border-top: none;
+  padding-top: 0;
+}
+
+.tpl-editorial__signatureRow:has(> .tpl-editorial__signatureItem:nth-child(2):last-child)
+  .tpl-editorial__signatureMedia {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  max-height: 520px;
+  margin-bottom: 18px;
+}
+
+.tpl-editorial__signatureItem:first-child .tpl-editorial__signatureMedia {
+  aspect-ratio: auto;
+  height: clamp(300px, 46vh, 520px);
+  max-height: none;
+}
+
+.tpl-editorial__signatureItem:not(:first-child) {
+  display: grid;
+  grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
+  gap: clamp(14px, 1.8vw, 24px);
+  align-items: center;
+  border-top: 1px solid var(--tpl-border);
+  padding-top: clamp(14px, 1.8vw, 22px);
+}
+
+.tpl-editorial__signatureItem:not(:first-child) .tpl-editorial__signatureMedia {
+  aspect-ratio: 1;
+  max-height: none;
+  margin-bottom: 0;
+  border-radius: 12px;
+}
+
+.tpl-editorial__signatureItem:hover .tpl-editorial__signatureMedia img {
+  transform: scale(1.045);
+}
+
+.tpl-editorial__signatureCopy {
+  padding-right: 8px;
+}
+
+.tpl-editorial__signatureName {
+  font-size: 23px;
+  margin: 0 0 6px;
+}
+
+.tpl-editorial__signatureDesc {
+  color: var(--tpl-text-2);
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.tpl-editorial__signaturePrice {
+  font-size: 16px;
+  color: var(--tpl-accent-ink);
+}
+
+/* --- Section rail: a compact index, not a full band --- */
+.tpl-editorial__rail {
+  background: var(--tpl-primary);
+  color: var(--tpl-on-primary);
+  padding: clamp(16px, 2.2vw, 26px) var(--band-pad) clamp(18px, 2.4vw, 30px);
+  display: flex;
+  align-items: baseline;
+  gap: clamp(16px, 3vw, 48px);
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.tpl-editorial__railLabel {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.tpl-editorial__railList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(10px, 2.2vw, 38px);
+}
+
+.tpl-editorial__railLink {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  padding: 4px 0 6px;
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.tpl-editorial__railLink:hover,
+.tpl-editorial__railLink.is-active {
+  color: #fff;
+  border-bottom-color: var(--tpl-accent);
+}
+
+.tpl-editorial__railIndex {
+  font-family: var(--tpl-display);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.tpl-editorial__railName {
+  font-family: var(--tpl-display);
+  font-size: clamp(18px, 2.1vw, 26px);
+  letter-spacing: -0.01em;
+}
+
+.tpl-editorial__railCount {
+  font-size: 11px;
+  opacity: 0.55;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Full menu --- */
+.tpl-editorial__menu {
+  padding: var(--band-gap) var(--band-pad);
+}
+
+.tpl-editorial__chapter {
+  padding-bottom: clamp(30px, 4vw, 56px);
+  margin-bottom: clamp(30px, 4vw, 56px);
+  border-bottom: 1px solid var(--tpl-border);
+}
+
+/*
+ * Alternate the chapter ground so the menu reads as chapters rather than one
+ * long flat list: a muted page with a white editorial band. The band has to
+ * reach the viewport edges — a filled box inset by the menu's padding reads
+ * as a floating white rectangle, which is worse than no band at all. The
+ * negative inline margin cancels that padding exactly; the block padding is
+ * moved inside the band so its content keeps the same rhythm.
+ */
+.tpl-editorial__chapter:nth-child(even) {
+  background: var(--tpl-surface);
+  margin-inline: calc(var(--band-pad) * -1);
+  padding-inline: var(--band-pad);
+  padding-top: clamp(30px, 4vw, 56px);
+  margin-top: calc(clamp(30px, 4vw, 56px) * -1);
+  border-bottom: none;
+}
+
+.tpl-editorial__chapter:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.tpl-editorial__chapterHead {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.tpl-editorial__chapterIndex {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  color: var(--tpl-accent-ink);
+}
+
+.tpl-editorial__chapterTitle {
+  font-size: clamp(24px, 3.4vw, 38px);
+  margin: 0;
+}
+
+.tpl-editorial__chapterCount {
+  font-size: 12px;
+  color: var(--tpl-muted-ink);
+  letter-spacing: 0.06em;
+}
+
+.tpl-editorial__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0 clamp(32px, 5vw, 76px);
+}
+
+/* An item is an editorial row, not a card: media on one side, copy on the
+   other, with a hairline rule. */
+.tpl-editorial__item {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--tpl-border);
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tpl-editorial__item:hover {
+  transform: translateX(5px);
+}
+
+/*
+ * A course with no photograph must not reserve the media column: the name
+ * would be squeezed into 168px and wrap into three lines while the rule and
+ * price stretch across the remaining space.
+ */
+.tpl-editorial__item:not(:has(.tpl-editorial__itemMedia)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tpl-editorial__item.is-hidden {
+  opacity: 0.42;
+}
+
+.tpl-editorial__itemMain {
+  min-width: 0;
+}
+
+.tpl-editorial__itemHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.tpl-editorial__itemName {
+  font-family: var(--tpl-display);
+  font-weight: 400;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+
+.tpl-editorial__itemRule {
+  flex: 1;
+  border-bottom: 1px dotted var(--tpl-border);
+  transform: translateY(-4px);
+}
+
+.tpl-editorial__itemPrice {
+  font-size: 17px;
+  color: var(--tpl-primary);
+}
+
+.tpl-editorial__itemDesc {
+  color: var(--tpl-text-2);
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.tpl-editorial__itemMedia {
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--tpl-surface);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.tpl-editorial__itemMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tpl-editorial__item:hover .tpl-editorial__itemMedia img {
+  transform: scale(1.06);
+}
+
+/* --- Visit --- */
+.tpl-editorial__visit {
+  background: var(--tpl-secondary);
+  color: var(--tpl-on-primary);
+  padding: var(--band-gap) var(--band-pad);
+}
+
+.tpl-editorial__visit .tpl-sectionTitle {
+  color: var(--tpl-on-primary);
+}
+
+.tpl-editorial__visit .tpl-sectionIndex {
+  color: var(--tpl-accent-ink);
+}
+
+.tpl-editorial__visitGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: clamp(20px, 3vw, 48px);
+}
+
+.tpl-editorial__visitCell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tpl-editorial__visitLabel {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.tpl-editorial__visitValue {
+  font-size: 17px;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 200ms ease;
+  width: fit-content;
+}
+
+a.tpl-editorial__visitValue:hover {
+  border-bottom-color: currentColor;
+}
+
+/* ============================================
+   2. Orbital Menu
+   ============================================ */
+
+.tpl-orbital {
+  padding: var(--band-gap) var(--band-pad);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.tpl-orbital__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: clamp(24px, 4vw, 48px);
+}
+
+.tpl-orbital__title {
+  font-size: clamp(30px, 5.4vw, 58px);
+  margin: 0;
+}
+
+.tpl-orbital__variants {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--tpl-border);
+  border-radius: 999px;
+  background: var(--tpl-surface);
+}
+
+.tpl-orbital__variant {
+  border: none;
+  background: none;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tpl-muted-ink);
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.tpl-orbital__variant:hover {
+  color: var(--tpl-text);
+}
+
+.tpl-orbital__variant.is-active {
+  background: var(--tpl-primary);
+  color: var(--tpl-on-primary);
+}
+
+.tpl-orbital__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 330px);
+  gap: clamp(24px, 4vw, 64px);
+  align-items: start;
+}
+
+.tpl-orbital__main {
+  min-width: 0;
+}
+
+/*
+ * The caption lives below the stage so the orbiting dishes can never
+ * overlap the dish description.
+ */
+.tpl-orbital__caption {
+  min-height: 96px;
+  text-align: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/*
+ * The stage. The centered variant is a true circle; the ellipse variants keep
+ * the same circular language stretched across a wider or taller box.
+ */
+.tpl-orbital__stage {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  max-height: 540px;
+  max-width: 540px;
+  margin-inline: auto;
+  width: 100%;
+  touch-action: pan-y;
+  overflow: hidden;
+}
+
+.tpl-orbital__stage--horizontal {
+  aspect-ratio: 4 / 3;
+  max-width: 620px;
+  max-height: 465px;
+}
+
+.tpl-orbital__stage--vertical {
+  aspect-ratio: 4 / 5;
+  max-width: 440px;
+  max-height: 550px;
+}
+
+/* The visible orbit path the dishes travel on. */
+.tpl-orbital__ringPath {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 8%;
+  bottom: 8%;
+  border: 1px solid color-mix(in srgb, var(--tpl-primary) 34%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tpl-orbital__stage--horizontal .tpl-orbital__ringPath {
+  left: 12%;
+  right: 12%;
+  top: 20%;
+  bottom: 20%;
+}
+
+.tpl-orbital__stage--vertical .tpl-orbital__ringPath {
+  left: 20%;
+  right: 20%;
+  top: 12%;
+  bottom: 12%;
+}
+
+/*
+ * Continuous orbit, straight from the animata "Orbiting items" pattern: the
+ * ring turns forever, each chip counter-rotates at the same speed so the dish
+ * stays upright, and the whole thing pauses on hover/focus. Transforms only,
+ * so the browser keeps it on the compositor.
+ */
+.tpl-orbital__orbitSpin {
+  position: absolute;
+  inset: 0;
+  animation: tplOrbit 80s linear infinite;
+  will-change: transform;
+}
+
+.tpl-orbital__chipCounter {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: tplOrbitCounter 80s linear infinite;
+  will-change: transform;
+}
+
+.tpl-orbital__stage:hover .tpl-orbital__orbitSpin,
+.tpl-orbital__stage:focus-within .tpl-orbital__orbitSpin,
+.tpl-orbital__stage:hover .tpl-orbital__chipCounter,
+.tpl-orbital__stage:focus-within .tpl-orbital__chipCounter {
+  animation-play-state: paused;
+}
+
+/*
+ * A dish chip on the orbit. The photography sits directly on the chip:
+ * a rounded disc for framed photos, a free-standing cutout otherwise. No
+ * text is rendered on a chip or on the dish photo.
+ */
+.tpl-orbital__chip {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  margin: 0;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: none;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 2;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tpl-orbital__chipPhoto {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--tpl-border);
+  background: var(--tpl-elevated);
+}
+
+.tpl-orbital__chipPhoto.is-cutout {
+  object-fit: contain;
+  background: transparent;
+  border-color: transparent;
+  filter: drop-shadow(0 7px 12px rgba(0, 0, 0, 0.3));
+}
+
+.tpl-orbital__chip:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.tpl-orbital__chip.is-active {
+  z-index: 3;
+  transform: translate(-50%, -50%) scale(1.22);
+}
+
+.tpl-orbital__chip.is-active .tpl-orbital__chipPhoto:not(.is-cutout) {
+  border-color: var(--tpl-primary);
+  box-shadow: 0 0 0 2px var(--tpl-primary), 0 14px 30px -12px rgba(0, 0, 0, 0.35);
+}
+
+.tpl-orbital__chip.is-active .tpl-orbital__chipPhoto.is-cutout {
+  filter: drop-shadow(0 0 3px var(--tpl-primary)) drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35));
+}
+
+/* The focal dish: photography only, never text. */
+.tpl-orbital__focal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(54%, 344px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tpl-orbital__focalPhoto {
+  width: 100%;
+  height: auto;
+  max-height: 280px;
+  object-fit: contain;
+  border-radius: 14px;
+  filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.28));
+}
+
+.tpl-orbital__focal3d {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  border-radius: 14px;
+  overflow: hidden;
+  animation: plateIn 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes plateIn {
+  from {
+    opacity: 0;
+    transform: scale(0.86) rotate(-4deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-orbital__focal3d {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-orbital__orbitSpin,
+  .tpl-orbital__chipCounter {
+    animation: none !important;
+  }
+}
+
+.tpl-orbital__focalCategory {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tpl-accent-ink);
+  margin-bottom: 6px;
+}
+
+.tpl-orbital__focalTitle {
+  font-size: clamp(20px, 2.8vw, 30px);
+  margin: 0 0 4px;
+}
+
+.tpl-orbital__focalPrice {
+  display: block;
+  font-size: 18px;
+  color: var(--tpl-primary);
+  margin-bottom: 8px;
+}
+
+.tpl-orbital__focalDesc {
+  font-size: 14px;
+  color: var(--tpl-text-2);
+}
+
+/* The dish list keeps every item reachable. */
+.tpl-orbital__list {
+  position: sticky;
+  top: 24px;
+  border-top: 1px solid var(--tpl-border);
+  padding-top: 16px;
+}
+
+.tpl-orbital__listLabel {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tpl-muted-ink);
+  margin-bottom: 12px;
+}
+
+.tpl-orbital__list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tpl-orbital__listItem {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--tpl-border);
+  padding: 11px 4px;
+  font: inherit;
+  text-align: left;
+  color: var(--tpl-text);
+  cursor: pointer;
+  transition: padding-left 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 220ms ease;
+}
+
+.tpl-orbital__listItem:hover {
+  padding-left: 10px;
+  color: var(--tpl-primary);
+}
+
+.tpl-orbital__listItem.is-active {
+  color: var(--tpl-primary);
+  font-weight: 600;
+}
+
+.tpl-orbital__listNum {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 11px;
+  color: var(--tpl-muted-ink);
+  letter-spacing: 0.08em;
+}
+
+.tpl-orbital__hint {
+  font-size: 12px;
+  color: var(--tpl-muted-ink);
+  margin-top: 16px;
+}
+
+/* ============================================
+   3. Ingredient Universe - premium black stage
+   ============================================ */
+
+/*
+ * After the two deconstructed-pizza references: a pure-black stage lit from
+ * the front, warm off-white type, thin gold leader lines and gold chips.
+ * The structure is unchanged - the dish in front, ingredients floating on
+ * depth planes - only the grading changed.
+ */
+.tpl-ingredient {
+  --iu-ink: #ece7dd;
+  --iu-dim: rgba(236, 231, 221, 0.58);
+  --iu-gold: #c9a15f;
+  --iu-gold-dim: rgba(201, 161, 95, 0.34);
+  position: relative;
+  background:
+    radial-gradient(110% 90% at 50% 38%, #171512 0%, #0d0d0c 58%, #060605 100%);
+  color: var(--iu-ink);
+  padding: var(--band-gap) var(--band-pad);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.tpl-ingredient :focus {
+  outline: 2px solid var(--iu-gold);
+}
+
+.tpl-ingredient__head {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.tpl-ingredient .tpl-eyebrow {
+  color: var(--iu-gold);
+}
+
+.tpl-ingredient__title {
+  font-size: clamp(30px, 5.4vw, 56px);
+  margin: 0 0 10px;
+  color: var(--iu-ink);
+}
+
+.tpl-ingredient__sub {
+  color: var(--iu-dim);
+  font-size: 16px;
+}
+
+.tpl-ingredient__switcher {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: clamp(20px, 3vw, 40px);
+}
+
+.tpl-ingredient__switchBtn {
+  border: 1px solid var(--iu-gold-dim);
+  background: rgba(236, 231, 221, 0.03);
+  border-radius: 2px;
+  padding: 7px 18px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--iu-dim);
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+
+.tpl-ingredient__switchBtn:hover {
+  border-color: var(--iu-gold);
+  color: var(--iu-ink);
+}
+
+.tpl-ingredient__switchBtn.is-active {
+  background: var(--iu-gold);
+  border-color: var(--iu-gold);
+  color: #171310;
+}
+
+/* The scene has real depth. */
+.tpl-ingredient__scene {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+}
+
+.tpl-ingredient__stage {
+  position: relative;
+  width: min(100%, 840px);
+  aspect-ratio: 800 / 520;
+  transform-style: preserve-3d;
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.tpl-ingredient__stage:active {
+  cursor: grabbing;
+}
+
+.tpl-ingredient__wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--iu-gold);
+  pointer-events: none;
+}
+
+/* The hero stays the hero: biggest, closest, lit from the front. */
+.tpl-ingredient__hero {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 270px;
+  height: 270px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+}
+
+/* A soft key light behind the hero. */
+.tpl-ingredient__glow {
+  position: absolute;
+  inset: -46%;
+  background: radial-gradient(
+    circle,
+    rgba(201, 161, 95, 0.26) 0%,
+    rgba(201, 161, 95, 0.06) 42%,
+    transparent 68%
+  );
+  pointer-events: none;
+}
+
+.tpl-ingredient__heroPhoto {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.65));
+}
+
+/* A cutout keeps its own shape; no circular mask. */
+.tpl-ingredient__heroPhoto.is-cutout {
+  filter: drop-shadow(0 28px 36px rgba(0, 0, 0, 0.7));
+}
+
+.tpl-ingredient__heroInitial {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c9a15f, #8f6b33);
+  color: #171310;
+  display: grid;
+  place-items: center;
+  font-size: 72px;
+  font-family: var(--tpl-display, Georgia, serif);
+}
+
+/* Contact shadow under the hero so it is grounded. */
+.tpl-ingredient__heroShadow {
+  position: absolute;
+  left: 50%;
+  bottom: -26px;
+  transform: translateX(-50%);
+  width: 62%;
+  height: 22px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.75), transparent 70%);
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+/* Ingredient planes sit at deliberate depths. */
+.tpl-ingredient__plane {
+  position: absolute;
+  z-index: var(--planeZ, 10);
+  transform: scale(var(--planeScale, 1));
+  opacity: var(--planeOpacity, 1);
+  min-width: 108px;
+  padding: 12px 20px;
+  border-radius: 2px;
+  border: 1px solid var(--iu-gold-dim);
+  background: rgba(13, 13, 12, 0.72);
+  backdrop-filter: blur(2px);
+  box-shadow: 0 18px 38px -20px rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+  font: inherit;
+  color: var(--iu-ink);
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 260ms ease, color 260ms ease, border-color 260ms ease,
+    box-shadow 260ms ease;
+}
+
+.tpl-ingredient__planeLabel {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tpl-ingredient__plane--front { top: 12%; left: 4%; }
+.tpl-ingredient__plane--middle { bottom: 8%; left: 16%; }
+.tpl-ingredient__plane--back { top: 16%; right: 2%; }
+
+.tpl-ingredient__plane:hover {
+  transform: scale(calc(var(--planeScale, 1) * 1.08));
+  border-color: var(--iu-gold);
+}
+
+.tpl-ingredient__plane.is-highlighted {
+  background: var(--iu-gold);
+  border-color: var(--iu-gold);
+  color: #171310;
+  transform: scale(calc(var(--planeScale, 1) * 1.12));
+}
+
+.tpl-ingredient__meta {
+  max-width: 640px;
+  margin: clamp(24px, 4vw, 48px) auto 0;
+  text-align: center;
+  border-top: 1px solid var(--iu-gold-dim);
+  padding-top: 26px;
+}
+
+.tpl-ingredient__metaCategory {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--iu-gold);
+  margin-bottom: 8px;
+}
+
+.tpl-ingredient__metaTitle {
+  font-size: clamp(22px, 3vw, 32px);
+  margin: 0 0 6px;
+  color: var(--iu-ink);
+}
+
+.tpl-ingredient__metaPrice {
+  font-size: 19px;
+  color: var(--iu-gold);
+  margin-bottom: 10px;
+}
+
+.tpl-ingredient__metaList {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+}
+
+.tpl-ingredient__metaList li {
+  font-size: 12px;
+  color: var(--iu-dim);
+  background: transparent;
+  border: 1px solid var(--iu-gold-dim);
+  padding: 4px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 220ms ease, color 220ms ease, border-color 220ms ease;
+}
+
+.tpl-ingredient__metaList li:hover {
+  border-color: var(--iu-gold);
+  color: var(--iu-ink);
+}
+
+.tpl-ingredient__metaList li.is-highlighted {
+  background: var(--iu-gold);
+  border-color: var(--iu-gold);
+  color: #171310;
+}
+
+.tpl-ingredient__allergens {
+  font-size: 13px;
+  color: var(--iu-dim);
+  margin-top: 14px;
+}
+
+/* ============================================
+   4. Endless Table
+   ============================================ */
+
+.tpl-endless {
+  padding-bottom: 0;
+}
+
+/* The jump bar. Compact category jump, always reachable. */
+.tpl-endless__jump {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px var(--band-pad);
+  background: color-mix(in srgb, var(--tpl-bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--tpl-border);
+  flex-wrap: wrap;
+}
+
+.tpl-endless__jump ul {
+  list-style: none;
+  display: flex;
+  gap: 22px;
+  padding: 0;
+  margin: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tpl-endless__jump ul::-webkit-scrollbar {
+  display: none;
+}
+
+.tpl-endless__jump a {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tpl-muted-ink);
+  text-decoration: none;
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 220ms ease, border-color 220ms ease;
+}
+
+.tpl-endless__jump a:hover {
+  color: var(--tpl-text);
+}
+
+.tpl-endless__jump li.is-active a {
+  color: var(--tpl-primary);
+  border-bottom-color: var(--tpl-primary);
+}
+
+.tpl-endless__jumpNum {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 11px;
+  color: var(--tpl-accent-ink);
+}
+
+.tpl-endless__mode {
+  border: 1px solid var(--tpl-border);
+  background: var(--tpl-surface);
+  border-radius: 999px;
+  padding: 6px 15px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--tpl-text-2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.tpl-endless__mode:hover {
+  background: var(--tpl-primary);
+  color: var(--tpl-on-primary);
+}
+
+.tpl-endless__chapter {
+  padding: var(--band-gap) var(--band-pad);
+  border-bottom: 1px solid var(--tpl-border);
+}
+
+.tpl-endless__chapter:nth-child(even) {
+  background: var(--tpl-surface);
+}
+
+.tpl-endless__chapterHead {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  margin-bottom: clamp(24px, 4vw, 52px);
+}
+
+.tpl-endless__chapterNum {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: clamp(30px, 5vw, 62px);
+  line-height: 1;
+  color: var(--tpl-accent-ink);
+  opacity: 0.85;
+}
+
+.tpl-endless__chapterTitle {
+  font-size: clamp(22px, 3vw, 34px);
+  margin: 0;
+}
+
+.tpl-endless__chapterRule {
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.15;
+}
+
+.tpl-endless__rows {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(40px, 7vw, 104px);
+  max-width: 1240px;
+}
+
+/* Alternating image/text, like the reference rhythm. */
+.tpl-endless__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(24px, 4vw, 64px);
+  align-items: center;
+}
+
+.tpl-endless__row--flip .tpl-endless__media {
+  order: 2;
+}
+
+.tpl-endless__media {
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--tpl-elevated);
+  box-shadow: 0 26px 60px -30px rgba(0, 0, 0, 0.42);
+}
+
+.tpl-endless__media img {
+  width: 100%;
+  max-height: 520px;
+  object-fit: cover;
+  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tpl-endless__row:hover .tpl-endless__media img {
+  transform: scale(1.035);
+}
+
+.tpl-endless__featured {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tpl-accent-ink);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-bottom: 12px;
+}
+
+.tpl-endless__name {
+  font-size: clamp(22px, 3vw, 36px);
+  margin: 0 0 10px;
+}
+
+.tpl-endless__desc {
+  color: var(--tpl-text-2);
+  font-size: 16px;
+  max-width: 46ch;
+  margin-bottom: 16px;
+}
+
+.tpl-endless__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.tpl-endless__price {
+  font-size: 22px;
+  color: var(--tpl-primary);
+}
+
+.tpl-endless__tags {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tpl-muted-ink);
+}
+
+/* Compact scan/list mode. */
+.tpl-endless__chapter.is-compact .tpl-endless__rows {
+  gap: 0;
+}
+
+.tpl-endless__chapter.is-compact .tpl-endless__row {
+  grid-template-columns: 92px 1fr;
+  gap: 18px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--tpl-border);
+  align-items: center;
+}
+
+.tpl-endless__chapter.is-compact .tpl-endless__row--flip .tpl-endless__media {
+  order: 0;
+}
+
+.tpl-endless__chapter.is-compact .tpl-endless__media {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.tpl-endless__chapter.is-compact .tpl-endless__media img {
+  max-height: 72px;
+}
+
+.tpl-endless__chapter.is-compact .tpl-endless__name {
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+
+.tpl-endless__chapter.is-compact .tpl-endless__desc {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.tpl-endless__chapter.is-compact .tpl-endless__price {
+  font-size: 16px;
+}
+
+/* ============================================
+   5. Menu Magazine
+   ============================================ */
+
+.tpl-magazine {
+  padding-bottom: 8px;
+}
+
+.tpl-magazine__masthead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: clamp(24px, 5vw, 54px) var(--band-pad) 22px;
+  border-bottom: 3px double var(--tpl-border);
+  flex-wrap: wrap;
+}
+
+.tpl-magazine__mastheadLeft {
+  min-width: 0;
+}
+
+.tpl-magazine__title {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: clamp(30px, 6vw, 66px);
+  line-height: 1.02;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.tpl-magazine__dateline {
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tpl-muted-ink);
+}
+
+.tpl-magazine__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 14px var(--band-pad);
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--tpl-border);
+  /* The sliding indicator is positioned against this strip. */
+  position: relative;
+}
+
+.tpl-magazine__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tpl-magazine__tab {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  border: none;
+  background: none;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--tpl-muted-ink);
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+
+.tpl-magazine__tab:hover {
+  color: var(--tpl-text);
+}
+
+.tpl-magazine__tab.is-active {
+  color: var(--tpl-primary);
+  border-bottom-color: var(--tpl-primary);
+}
+
+.tpl-magazine__tabNum {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 11px;
+  color: var(--tpl-accent-ink);
+}
+
+.tpl-magazine__tab--list {
+  margin-left: auto;
+  border: 1px solid var(--tpl-border);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/*
+ * A magazine spread: two pages side by side with a spine between them.
+ *
+ * The viewport provides the perspective, the stage holds both layers, and the
+ * turning layer rotates around the spine so the paper itself lifts and folds,
+ * carrying the photography with it.
+ */
+.tpl-magazine__viewport {
+  padding: clamp(20px, 4vw, 48px) var(--band-pad);
+  perspective: 2000px;
+  perspective-origin: 50% 42%;
+}
+
+.tpl-magazine__stage {
+  position: relative;
+  transform-style: preserve-3d;
+  margin-inline: auto;
+  max-width: 1180px;
+}
+
+/* The spread that is being revealed underneath the folding page. */
+.tpl-magazine__spread--base {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * The layer holding the two current pages while they turn. The right page
+ * hinges on the centre gutter and sweeps over to the left.
+ */
+.tpl-magazine__turner {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.tpl-magazine__half {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: var(--tpl-elevated);
+  overflow: hidden;
+}
+
+.tpl-magazine__half--left {
+  left: 0;
+  border-right: 1px solid var(--tpl-border);
+  box-shadow: -18px 0 30px -24px rgba(0, 0, 0, 0.35);
+}
+
+.tpl-magazine__half--right {
+  left: 50%;
+  border-left: 1px solid var(--tpl-border);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  box-shadow: 18px 0 30px -24px rgba(0, 0, 0, 0.35);
+}
+
+.tpl-magazine__spreadInner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--tpl-elevated);
+  border: 1px solid var(--tpl-border);
+  box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.34);
+  overflow: hidden;
+}
+
+.tpl-magazine__page {
+  padding: clamp(24px, 3.4vw, 48px);
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tpl-magazine__page--right {
+  border-left: 1px solid var(--tpl-border);
+}
+
+.tpl-magazine__pageHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 12px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--tpl-border);
+}
+
+.tpl-magazine__folio {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--tpl-accent-ink);
+}
+
+.tpl-magazine__folioTotal {
+  font-size: 12px;
+  color: var(--tpl-muted-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Left page: the feature ---- */
+
+.tpl-magazine__featureTitle {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: clamp(30px, 4.4vw, 56px);
+  line-height: 1.02;
+  margin: 0 0 10px;
+  text-wrap: balance;
+}
+
+.tpl-magazine__featureLede {
+  font-size: 14px;
+  color: var(--tpl-muted-ink);
+  max-width: 34ch;
+  margin: 0 0 26px;
+}
+
+.tpl-magazine__feature {
+  margin: 0;
+}
+
+/*
+ * The product sits directly on the page. No frame, no fill, no rounded
+ * rectangle: a soft shadow follows the image's own alpha, so a cutout looks
+ * like it was placed on the paper rather than pasted into a box.
+ */
+/*
+ * A photograph runs the full column width, so the page reads as a spread
+ * rather than a small product shot floating in white space. A cutout keeps
+ * its alpha and is never cropped or boxed.
+ */
+.tpl-magazine__featureImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  height: auto;
+  object-fit: cover;
+  margin-top: 6px;
+  border-radius: 2px;
+}
+
+.tpl-magazine__featureImage.is-cutout {
+  width: auto;
+  max-width: 100%;
+  max-height: 340px;
+  aspect-ratio: auto;
+  object-fit: contain;
+  border-radius: 0;
+  filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.22));
+}
+
+.tpl-magazine__caption {
+  margin-top: 18px;
+}
+
+.tpl-magazine__itemName {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 21px;
+  margin: 0 0 6px;
+}
+
+.tpl-magazine__itemDesc {
+  font-size: 14px;
+  color: var(--tpl-text-2);
+  margin: 0 0 8px;
+  max-width: 40ch;
+}
+
+.tpl-magazine__itemPrice {
+  font-size: 16px;
+  color: var(--tpl-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Right page: the numbered index ---- */
+
+.tpl-magazine__index {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.tpl-magazine__page--right {
+  display: flex;
+  flex-direction: column;
+}
+
+.tpl-magazine__pageFoot {
+  margin-top: auto;
+  padding-top: clamp(24px, 3vw, 40px);
+  border-top: 1px solid var(--tpl-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  color: var(--tpl-muted-ink);
+}
+
+.tpl-magazine__pageFootMark {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--tpl-accent-ink);
+}
+
+.tpl-magazine__pageFootNote {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  color: var(--tpl-text-2);
+  max-width: 24ch;
+  text-align: right;
+}
+
+.tpl-magazine__indexRow {
+  display: grid;
+  grid-template-columns: 26px 52px minmax(0, 1fr) auto;
+  grid-template-areas: 'num image body price';
+  gap: 0 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--tpl-border);
+}
+
+.tpl-magazine__indexRow:last-child {
+  border-bottom: none;
+}
+
+/*
+ * The thumbnail is placed straight onto the page. No box, no fill: a small
+ * shadow that follows the alpha keeps it from looking pasted on. At 52px it
+ * is legible as a dish rather than a coloured speck.
+ */
+.tpl-magazine__indexImage {
+  grid-area: image;
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.tpl-magazine__indexImage.is-cutout {
+  object-fit: contain;
+  border-radius: 0;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.16));
+}
+
+.tpl-magazine__indexNum {
+  grid-area: num;
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 15px;
+  color: var(--tpl-accent-ink);
+  line-height: 1.3;
+}
+
+.tpl-magazine__indexBody {
+  grid-area: body;
+  min-width: 0;
+}
+
+.tpl-magazine__indexName {
+  display: block;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.tpl-magazine__indexDesc {
+  display: block;
+  font-size: 12.5px;
+  color: var(--tpl-muted-ink);
+  margin-top: 2px;
+}
+
+.tpl-magazine__indexPrice {
+  grid-area: price;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tpl-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.tpl-magazine__indexEmpty {
+  font-size: 13px;
+  color: var(--tpl-muted-ink);
+  padding: 18px 0;
+}
+
+/* The spine between the pages. */
+.tpl-magazine__gutter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 72px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.035) 40%,
+    rgba(0, 0, 0, 0.11) 50%,
+    rgba(0, 0, 0, 0.035) 60%,
+    transparent 100%
+  );
+}
+
+/*
+ * Shading that travels across the folding page so the paper reads as curving
+ * away from the light rather than as a flat card rotating.
+ */
+.tpl-magazine__half--right::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.05) 60%,
+    rgba(0, 0, 0, 0.22) 100%
+  );
+  animation: tplFoldShade 0.52s cubic-bezier(0.42, 0, 0.25, 1) both;
+}
+
+@keyframes tplFoldShade {
+  0% { opacity: 0; }
+  40% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* Accessible list fallback. */
+.tpl-magazine__list {
+  padding: clamp(24px, 4vw, 48px) var(--band-pad);
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.tpl-magazine__listSection {
+  margin-bottom: 34px;
+}
+
+.tpl-magazine__listTitle {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 26px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--tpl-border);
+  margin: 0 0 16px;
+}
+
+.tpl-magazine__listSection ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tpl-magazine__listSection li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 16px;
+  align-items: baseline;
+  border-bottom: 1px solid var(--tpl-border);
+  padding-bottom: 12px;
+}
+
+.tpl-magazine__listName {
+  font-weight: 600;
+}
+
+.tpl-magazine__listDesc {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--tpl-text-2);
+}
+
+.tpl-magazine__listPrice {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.tpl-magazine__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 8px var(--band-pad) 40px;
+}
+
+.tpl-magazine__controls button {
+  border: 1px solid var(--tpl-border);
+  background: var(--tpl-surface);
+  border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--tpl-text);
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+}
+
+.tpl-magazine__controls button:hover:not(:disabled) {
+  background: var(--tpl-primary);
+  color: var(--tpl-on-primary);
+  transform: translateY(-2px);
+}
+
+.tpl-magazine__controls button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tpl-magazine__counter {
+  font-size: 13px;
+  color: var(--tpl-muted-ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em;
+}
+
+/* ============================================
+   6. Cafe Pedestal
+   ============================================ */
+
+/*
+ * The Drinko reference: plaster-sand hero pierced by huge white type, a
+ * pedestal-staged signature drink breaking the line, cream product cards on
+ * a menu slab, pill category tabs, and a pastel signature band at the foot.
+ */
+.tpl-cafe {
+  background: #f2ead9;
+}
+
+.tpl-cafe__hero {
+  position: relative;
+  text-align: center;
+  overflow: hidden;
+  padding: 16px clamp(18px, 5vw, 72px) clamp(28px, 4vw, 44px);
+  background:
+    radial-gradient(120% 85% at 28% 12%, rgba(255, 255, 255, 0.5), transparent 52%),
+    radial-gradient(95% 75% at 76% 62%, rgba(110, 78, 52, 0.3), transparent 62%),
+    linear-gradient(165deg, #d6c2a8 0%, #c6a98d 55%, #b08f72 100%);
+  border-bottom: 1px solid rgba(70, 45, 28, 0.22);
+}
+
+.tpl-cafe__topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 11px;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: rgba(56, 35, 22, 0.78);
+  padding-bottom: clamp(24px, 5vw, 54px);
+}
+
+.tpl-cafe__wordmark {
+  font-weight: 800;
+}
+
+.tpl-cafe__topMeta {
+  opacity: 0.85;
+  text-align: right;
+}
+
+.tpl-cafe__heroRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.tpl-cafe__heroWord {
+  position: relative;
+  z-index: 2;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: clamp(40px, 11.5vw, 126px);
+  line-height: 0.92;
+  letter-spacing: 0.015em;
+  color: #fffdf6;
+  text-shadow: 0 3px 0 rgba(74, 48, 30, 0.25);
+  white-space: nowrap;
+}
+
+/*
+ * The hero product is framed as a plate: a circle that overlaps the two
+ * words, so the line reads as one composition instead of type interrupted
+ * by a pasted rectangle. A rectangular photo sits fine in the circle; a
+ * cutout keeps its alpha and simply floats inside it.
+ */
+.tpl-cafe__heroMedia {
+  position: relative;
+  z-index: 3;
+  flex: 0 0 auto;
+  width: clamp(150px, 24vw, 292px);
+  aspect-ratio: 1;
+  margin-inline: clamp(-16px, -1.8vw, -6px);
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(160deg, #e3d0b8, #cdb39a);
+  border: 7px solid rgba(255, 253, 246, 0.6);
+  box-shadow:
+    0 30px 48px -20px rgba(56, 35, 22, 0.68),
+    inset 0 0 0 1px rgba(56, 35, 22, 0.2);
+  transform: translateY(-0.05em);
+}
+
+.tpl-cafe__heroMedia.is-cutout {
+  background: radial-gradient(circle at 50% 45%, rgba(255, 253, 246, 0.34), transparent 68%);
+  border-color: rgba(255, 253, 246, 0.42);
+}
+
+/*
+ * Free steam: two blurred, warm-white wisps rising from the cup. CSS only,
+ * no video asset, transform/opacity only so it never triggers layout.
+ */
+.tpl-cafe__steam {
+  position: absolute;
+  left: 50%;
+  width: 46px;
+  height: 120px;
+  border-radius: 50%;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse 40% 100% at 50% 100%,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0) 70%);
+  filter: blur(7px);
+  opacity: 0;
+  animation: tplCafeSteam 3.6s ease-in-out infinite;
+}
+
+.tpl-cafe__steam--a {
+  top: 2%;
+  margin-left: -34px;
+  animation-delay: 0.2s;
+  transform-origin: bottom center;
+}
+
+.tpl-cafe__steam--b {
+  top: -4%;
+  margin-left: 6px;
+  height: 150px;
+  width: 40px;
+  animation-delay: 1.7s;
+}
+
+@keyframes tplCafeSteam {
+  0% { opacity: 0; transform: translate3d(0, 18px, 0) scaleX(1) scaleY(0.7); }
+  30% { opacity: 0.75; }
+  65% { opacity: 0.4; }
+  100% { opacity: 0; transform: translate3d(-14px, -72px, 0) scaleX(1.6) scaleY(1.15); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-cafe__steam {
+    animation: none;
+  }
+}
+
+.tpl-cafe__heroPhoto {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 45%;
+}
+
+/* A cutout must never be cropped or boxed: alpha is preserved. */
+.tpl-cafe__heroPhoto.is-cutout {
+  object-fit: contain;
+  padding: 9%;
+  filter: drop-shadow(0 16px 18px rgba(56, 35, 22, 0.5));
+}
+
+.tpl-cafe__welcome {
+  font-family: var(--tpl-display);
+  font-style: italic;
+  font-size: clamp(15px, 2.1vw, 20px);
+  color: #fffdf6;
+  margin-top: 6px;
+  text-shadow: 0 1px 6px rgba(56, 35, 22, 0.35);
+}
+
+.tpl-cafe__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 9px 26px;
+  border-radius: 999px;
+  background: #2e211a;
+  color: #f6eee1;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.tpl-cafe__cta:hover {
+  transform: translateY(-2px);
+  background: #453026;
+}
+
+/* ---------- Menu slab ---------- */
+
+.tpl-cafe__menu {
+  padding: clamp(30px, 4.5vw, 54px) var(--band-pad) clamp(40px, 5vw, 64px);
+  background: #f2ead9;
+}
+
+.tpl-cafe__menuHead {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: clamp(18px, 2.5vw, 30px);
+}
+
+.tpl-cafe__menuTitle {
+  position: relative;
+  font-family: var(--tpl-display);
+  font-size: clamp(30px, 4vw, 44px);
+  color: #332216;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.tpl-cafe__script {
+  font-style: italic;
+  font-size: 0.62em;
+  color: #8a6748;
+  order: 2;
+}
+
+.tpl-cafe__pills {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: clamp(22px, 3vw, 36px);
+}
+
+.tpl-cafe__pill {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 22px;
+  background: #c79b72;
+  color: #2e211a;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+}
+
+.tpl-cafe__pill:hover {
+  transform: translateY(-1px);
+}
+
+.tpl-cafe__pill.is-active {
+  background: #332216;
+  color: #f6eee1;
+}
+
+.tpl-cafe__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(210px, 22vw, 260px), 1fr));
+  gap: clamp(14px, 1.6vw, 22px);
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.tpl-cafe__card {
+  background: #ece1cd;
+  border: 1px solid rgba(70, 45, 28, 0.16);
+  border-radius: 16px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tpl-cafe__card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -22px rgba(56, 35, 22, 0.45);
+}
+
+.tpl-cafe__cardMedia {
+  position: relative;
+  background: linear-gradient(160deg, #f8efdf, #eee0ca);
+  border-radius: 12px;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/*
+ * Photography fills the well. The white inset used to letterbox portrait
+ * shots into a visible white box; a warm well + cover crop removes it.
+ */
+.tpl-cafe__cardImg {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: center 45%;
+  padding: 0;
+}
+
+.tpl-cafe__cardImg.is-cutout {
+  object-fit: contain;
+  padding: 7%;
+  background: transparent;
+  filter: drop-shadow(0 10px 14px rgba(56, 35, 22, 0.32));
+}
+
+.tpl-cafe__cardInitial {
+  font-family: var(--tpl-display);
+  font-size: 44px;
+  color: #b9a487;
+}
+
+.tpl-cafe__badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #332216;
+  color: #f6eee1;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.tpl-cafe__cardBody {
+  padding: 12px 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.tpl-cafe__cardName {
+  font-family: var(--tpl-display);
+  font-size: 16.5px;
+  color: #332216;
+  margin: 0;
+}
+
+.tpl-cafe__cardDesc {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #6f5644;
+  margin: 0;
+}
+
+.tpl-cafe__cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(70, 45, 28, 0.14);
+}
+
+.tpl-cafe__price {
+  font-weight: 800;
+  font-size: 14px;
+  color: #332216;
+  font-variant-numeric: tabular-nums;
+}
+
+.tpl-cafe__cardTags {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a6748;
+}
+
+.tpl-cafe__moreRow {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
+}
+
+.tpl-cafe__more {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 40px;
+  background: #c79b72;
+  color: #2e211a;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 180ms ease;
+}
+
+.tpl-cafe__more:hover {
+  transform: translateY(-2px);
+}
+
+/* ---------- Promo band ---------- */
+
+.tpl-cafe__promo {
+  background:
+    radial-gradient(80% 140% at 82% 30%, rgba(255, 255, 255, 0.4), transparent 55%),
+    linear-gradient(120deg, #f4cccc 0%, #eebbbd 100%);
+  border-top: 1px solid rgba(70, 45, 28, 0.18);
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: center;
+  gap: clamp(18px, 4vw, 60px);
+  padding: clamp(28px, 4vw, 52px) var(--band-pad);
+  overflow: hidden;
+}
+
+.tpl-cafe__promoKicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.tpl-cafe__promoKicker em {
+  font-family: var(--tpl-display);
+  font-size: clamp(26px, 4vw, 40px);
+  color: #fffdf6;
+  line-height: 1;
+}
+
+.tpl-cafe__promoKicker {
+  font-family: var(--tpl-display);
+  font-style: italic;
+  font-size: clamp(14px, 1.6vw, 18px);
+  color: #5c2f28;
+}
+
+.tpl-cafe__promoTitle {
+  font-family: inherit;
+  font-weight: 800;
+  font-size: clamp(30px, 5.2vw, 58px);
+  line-height: 1.02;
+  color: #43241f;
+  margin: 0 0 12px;
+}
+
+.tpl-cafe__promoDesc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #5c2f28;
+  max-width: 44ch;
+  margin: 0 0 16px;
+}
+
+.tpl-cafe__promoChips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0 0 18px;
+}
+
+.tpl-cafe__promoChips li {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(67, 36, 31, 0.18);
+  color: #43241f;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.tpl-cafe__promoPrice {
+  font-weight: 800;
+  font-size: clamp(22px, 3vw, 30px);
+  color: #43241f;
+  font-variant-numeric: tabular-nums;
+}
+
+.tpl-cafe__promoMedia {
+  display: flex;
+  justify-content: center;
+}
+
+.tpl-cafe__promoPhoto {
+  width: 100%;
+  max-width: 330px;
+  height: auto;
+  max-height: 380px;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 26px rgba(67, 36, 31, 0.4));
+}
+
+.tpl-cafe__promoPhoto.is-cutout {
+  filter: drop-shadow(0 24px 30px rgba(67, 36, 31, 0.5));
+}
+
+@media (max-width: 980px) {
+  .tpl-cafe__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tpl-cafe__heroRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 'media media' 'left right';
+    justify-items: center;
+    gap: 4px 10px;
+  }
+  .tpl-cafe__heroMedia {
+    grid-area: media;
+    width: min(46vw, 232px);
+    margin: 0 0 8px;
+  }
+  .tpl-cafe__heroWord {
+    font-size: clamp(38px, 13vw, 74px);
+    line-height: 0.95;
+  }
+  .tpl-cafe__heroWord--left {
+    grid-area: left;
+    justify-self: end;
+  }
+  .tpl-cafe__heroWord--right {
+    grid-area: right;
+    justify-self: start;
+  }
+  .tpl-cafe__promo {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .tpl-cafe__promoDesc {
+    margin-inline: auto;
+  }
+  .tpl-cafe__promoChips {
+    justify-content: center;
+  }
+  .tpl-cafe__promoKicker {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .tpl-cafe__grid {
+    grid-template-columns: 1fr;
+  }
+  .tpl-cafe__topMeta {
+    display: none;
+  }
+}
+
+/* ============================================
+   7. Mosaic (Akme)
+   ============================================ */
+
+/*
+ * The AKME reference: a dark gallery wall of square poster tiles in
+ * alternating grounds - camel, maroon, deep red, cream - each photo staged
+ * on a soft radial key light, each typographic plate carrying folio, name
+ * and price. Edge-to-edge, no card chrome, no rounded corners.
+ */
+.tpl-mosaic {
+  background: #211b17;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.tpl-mosaic__rail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px clamp(18px, 4vw, 44px);
+  border-bottom: 1px solid rgba(236, 226, 210, 0.14);
+}
+
+.tpl-mosaic__wordmark {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: 17px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #ece2d2;
+}
+
+.tpl-mosaic__railMeta {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(236, 226, 210, 0.55);
+  text-align: right;
+}
+
+.tpl-mosaic__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  background: #211b17;
+  padding: 2px;
+  flex: 1;
+  grid-auto-rows: minmax(34vh, 1fr);
+}
+
+.tpl-mosaic__tile {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  animation: mosaicIn 760ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+@keyframes mosaicIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-mosaic__tile {
+    animation: none;
+  }
+}
+
+.tpl-mosaic__tile--camel { background: #c9a179; color: #2f1e15; }
+.tpl-mosaic__tile--maroon { background: #6f3230; color: #f2ddc4; }
+.tpl-mosaic__tile--red { background: #8a4136; color: #f7e3cf; }
+.tpl-mosaic__tile--cream { background: #e9dcc9; color: #2f221a; }
+
+.tpl-mosaic__tile.is-featured {
+  box-shadow: inset 0 0 0 2px #d5a45f;
+}
+
+.tpl-mosaic__tileGlow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(90% 70% at 50% 38%, rgba(255, 250, 238, 0.4), transparent 62%);
+  pointer-events: none;
+}
+
+.tpl-mosaic__tile--camel .tpl-mosaic__tileGlow {
+  background: radial-gradient(90% 70% at 50% 38%, rgba(255, 250, 238, 0.55), transparent 62%);
+}
+.tpl-mosaic__tile--maroon .tpl-mosaic__tileGlow {
+  background: radial-gradient(90% 70% at 50% 38%, rgba(255, 230, 200, 0.22), transparent 62%);
+}
+.tpl-mosaic__tile--red .tpl-mosaic__tileGlow {
+  background: radial-gradient(90% 70% at 50% 38%, rgba(255, 228, 196, 0.24), transparent 62%);
+}
+.tpl-mosaic__tile--cream .tpl-mosaic__tileGlow {
+  background: radial-gradient(90% 70% at 50% 38%, rgba(255, 255, 255, 0.6), transparent 62%);
+}
+
+/*
+ * Photo tiles are full-bleed macro frames: the photograph is the tile, the
+ * type sits on a bottom scrim. Only a cutout keeps the old staged treatment
+ * (contained on the coloured ground with a soft key light), because cropping
+ * or boxing alpha would break it.
+ */
+.tpl-mosaic__tilePhoto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 48%;
+  z-index: 1;
+  transition: transform 760ms var(--ease-out);
+}
+
+.tpl-mosaic__tile:hover .tpl-mosaic__tilePhoto,
+.tpl-mosaic__tile:focus-within .tpl-mosaic__tilePhoto {
+  transform: scale(1.045);
+}
+
+.tpl-mosaic__tilePhoto.is-cutout {
+  inset: 8% 12% 26%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 22px rgba(20, 12, 8, 0.5));
+}
+
+.tpl-mosaic__tileBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 54px 15px 15px;
+  background: linear-gradient(
+    180deg,
+    rgba(18, 10, 8, 0) 0%,
+    rgba(18, 10, 8, 0.5) 42%,
+    rgba(18, 10, 8, 0.92) 100%
+  );
+  color: #fbf3e6;
+}
+
+.tpl-mosaic__tileName {
+  font-family: var(--tpl-display);
+  font-size: clamp(15px, 1.6vw, 19px);
+  line-height: 1.15;
+  margin: 0 0 2px;
+  color: #fdf7ec;
+  text-shadow: 0 2px 18px rgba(10, 6, 4, 0.55);
+}
+
+.tpl-mosaic__tileDesc {
+  font-size: 10.5px;
+  line-height: 1.4;
+  margin: 0;
+  color: rgba(253, 247, 236, 0.78);
+  max-width: 34ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tpl-mosaic__tilePrice {
+  font-weight: 800;
+  font-size: clamp(13px, 1.5vw, 16px);
+  font-variant-numeric: tabular-nums;
+  color: #fbf3e6;
+  white-space: nowrap;
+  padding-bottom: 2px;
+}
+
+/* Typographic plate - no photo, just type on the ground. */
+.tpl-mosaic__tileType {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 18px;
+  width: 100%;
+}
+
+.tpl-mosaic__folio {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.tpl-mosaic__tileTitle {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: clamp(19px, 2.2vw, 27px);
+  line-height: 1.08;
+  margin: auto 0 0;
+}
+
+.tpl-mosaic__tileBody {
+  font-size: 11.5px;
+  line-height: 1.5;
+  margin: 0;
+  opacity: 0.88;
+  max-width: 30ch;
+}
+
+.tpl-mosaic__tileFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid currentColor;
+}
+
+.tpl-mosaic__folioPrice {
+  font-weight: 800;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tpl-mosaic__sig {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  padding: 3px 8px;
+  border-radius: 999px;
+  opacity: 0.85;
+}
+
+.tpl-mosaic__empty {
+  grid-column: 1 / -1;
+  padding: 60px 20px;
+  text-align: center;
+  color: rgba(236, 226, 210, 0.6);
+}
+
+.tpl-mosaic__visit {
+  text-align: center;
+  padding: 30px var(--band-pad) 36px;
+  border-top: 1px solid rgba(236, 226, 210, 0.14);
+  background: #211b17;
+}
+
+.tpl-mosaic__visitLine {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: clamp(18px, 2.4vw, 26px);
+  color: #ece2d2;
+  margin: 8px 0 6px;
+}
+
+.tpl-mosaic__visitPhone {
+  color: #d5a45f;
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 900px) {
+  .tpl-mosaic__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(38vh, 1fr);
+  }
+  .tpl-mosaic__tileWordmark {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 540px) {
+  .tpl-mosaic__grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: minmax(34vh, 1fr);
+  }
+}
+
+/* ============================================
+   8. Ingredient Story
+   ============================================ */
+
+/*
+ * The owner's idea, taken literally. Every item is its own chapter and the
+ * chapter's background is the macro photography of its hero ingredient
+ * (resolved at publish from Openverse / Wikimedia Commons, CC-BY-SA-safe,
+ * credited in the public footer). Layouts alternate between a full-bleed
+ * cover and a split composition where the dish floats across the seam -
+ * the pistachio macaron reference.
+ */
+.tpl-story {
+  background: #11100e;
+  color: #ece7dd;
+  min-height: 100%;
+}
+
+.tpl-story__masthead {
+  text-align: center;
+  padding: clamp(34px, 6vw, 76px) var(--band-pad) clamp(26px, 4vw, 44px);
+  border-bottom: 1px solid rgba(201, 161, 95, 0.25);
+}
+
+.tpl-story__title {
+  font-size: clamp(32px, 6.4vw, 68px);
+  margin: 12px 0 12px;
+  color: #ece7dd;
+}
+
+.tpl-story__lede {
+  color: rgba(236, 231, 221, 0.62);
+  max-width: 46ch;
+  margin: 0 auto;
+}
+
+.tpl-story__count {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #c9a15f;
+}
+
+.tpl-story__empty {
+  padding: 80px 20px;
+  text-align: center;
+  color: rgba(236, 231, 221, 0.55);
+}
+
+.tpl-story__folio {
+  position: absolute;
+  top: clamp(16px, 3vw, 34px);
+  right: clamp(18px, 4vw, 48px);
+  z-index: 3;
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: clamp(56px, 11vw, 130px);
+  line-height: 1;
+  color: rgba(236, 231, 221, 0.14);
+  pointer-events: none;
+}
+
+.tpl-story__eyebrow {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #c9a15f;
+  margin-bottom: 10px;
+}
+
+.tpl-story__desc {
+  color: rgba(236, 231, 221, 0.78);
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0 0 18px;
+  max-width: 44ch;
+}
+
+.tpl-story__metaRow {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.tpl-story__price {
+  font-size: clamp(20px, 2.6vw, 27px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #c9a15f;
+}
+
+.tpl-story__heroTag {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(236, 231, 221, 0.55);
+}
+
+.tpl-story__chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 0;
+  margin: 14px 0 0;
+}
+
+.tpl-story__chips li {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(236, 231, 221, 0.85);
+  border: 1px solid rgba(201, 161, 95, 0.4);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+/* ---------- Chapter shared chrome ---------- */
+
+.tpl-story__section {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(201, 161, 95, 0.16);
+}
+
+/* ---------- Cover chapter (image full-bleed) ---------- */
+
+.tpl-story__section--cover {
+  min-height: 76vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+}
+
+/* The macro hero backdrop. Motion.span owns the element so it can be scrubbed. */
+.tpl-story__coverBg {
+  position: absolute;
+  inset: -12% 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: 62% 38%;
+  opacity: 0.52;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.tpl-story__section--cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(100deg, rgba(10, 9, 8, 0.92) 0%, rgba(10, 9, 8, 0.62) 46%, rgba(10, 9, 8, 0.05) 78%),
+    linear-gradient(0deg, rgba(17, 16, 14, 0.9), transparent 44%);
+  pointer-events: none;
+}
+
+.tpl-story__coverBody {
+  position: relative;
+  z-index: 1;
+  padding: clamp(30px, 6vw, 76px) var(--band-pad);
+  align-self: center;
+}
+
+.tpl-story__coverName {
+  font-size: clamp(32px, 5.6vw, 62px);
+  line-height: 1.04;
+  margin: 0 0 16px;
+  color: #f4efe4;
+  text-wrap: balance;
+}
+
+.tpl-story__coverPhoto {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(20px, 4vw, 48px);
+}
+
+.tpl-story__coverPhoto img {
+  width: 100%;
+  max-width: 380px;
+  height: auto;
+  max-height: 56vh;
+  object-fit: contain;
+  filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.6));
+}
+
+.tpl-story__sideLabel {
+  position: absolute;
+  right: clamp(6px, 1.6vw, 22px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  writing-mode: vertical-rl;
+  font-size: 11px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(236, 231, 221, 0.4);
+  pointer-events: none;
+}
+
+/* ---------- Split chapter (the pistachio macaron) ---------- */
+
+.tpl-story__section--split {
+  min-height: 86vh;
+  display: block;
+}
+
+.tpl-story__splitTop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 47%;
+  display: grid;
+  place-items: center;
+  background: #1b1815;
+  overflow: hidden;
+}
+
+/* The macro hero backdrop. Motion.span owns the element so it can be scrubbed. */
+.tpl-story__splitBg {
+  position: absolute;
+  inset: -10% 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center 42%;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.tpl-story__section--split .tpl-story__splitTop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg,
+    rgba(17, 16, 14, 0.44) 0%,
+    rgba(17, 16, 14, 0.02) 45%,
+    #11100e 96%);
+  pointer-events: none;
+}
+
+.tpl-story__splitName {
+  position: relative;
+  z-index: 2;
+  font-family: inherit;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: clamp(40px, 10.5vw, 128px);
+  letter-spacing: 0.06em;
+  line-height: 0.95;
+  text-align: center;
+  color: rgba(244, 239, 228, 0.94);
+  text-shadow: 0 4px 34px rgba(0, 0, 0, 0.65);
+  padding: 0 4vw;
+}
+
+.tpl-story__splitFallback {
+  position: relative;
+  z-index: 2;
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: clamp(30px, 5vw, 54px);
+  color: rgba(244, 239, 228, 0.85);
+}
+
+.tpl-story__splitBody {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 53%;
+  background: #11100e;
+  padding: clamp(20px, 4vw, 40px) var(--band-pad) clamp(26px, 4vw, 44px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.tpl-story__name {
+  font-size: clamp(28px, 4.6vw, 48px);
+  line-height: 1.05;
+  margin: 0 0 12px;
+  color: #f4efe4;
+  max-width: 18ch;
+}
+
+.tpl-story__splitPhoto {
+  position: absolute;
+  z-index: 2;
+  left: 68%;
+  top: 47%;
+  transform: translate(-50%, -50%);
+  width: min(34vw, 330px);
+  pointer-events: none;
+}
+
+.tpl-story__splitPhoto img {
+  width: 100%;
+  height: auto;
+  max-height: 52vh;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 34px rgba(0, 0, 0, 0.62));
+}
+
+/* ---------- Visit footer ---------- */
+
+.tpl-story__visit {
+  padding: clamp(36px, 5vw, 64px) var(--band-pad);
+  text-align: center;
+}
+
+.tpl-story__visitLine {
+  font-family: var(--tpl-display, Georgia, serif);
+  font-size: clamp(17px, 2.6vw, 24px);
+  color: #e8e2d4;
+  margin: 10px 0 8px;
+}
+
+.tpl-story__visitPhone {
+  color: #c9a15f;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 900px) {
+  .tpl-story__section--cover {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .tpl-story__coverBody {
+    padding-bottom: 10px;
+  }
+  .tpl-story__coverPhoto {
+    padding-top: 0;
+  }
+  .tpl-story__coverPhoto img {
+    max-height: 40vh;
+    max-width: 280px;
+  }
+  .tpl-story__sideLabel {
+    display: none;
+  }
+  .tpl-story__section--split {
+    min-height: 0;
+  }
+  .tpl-story__splitTop {
+    position: relative;
+    height: 34vh;
+  }
+  .tpl-story__splitBody {
+    position: relative;
+    height: auto;
+    padding-top: 110px;
+  }
+  .tpl-story__splitPhoto {
+    top: 34vh;
+    left: 50%;
+    width: min(52vw, 240px);
+  }
+  .tpl-story__splitName {
+    font-size: clamp(30px, 11vw, 56px);
+  }
+}
+
+/* ============================================
+   Keyframes
+   ============================================ */
+
+@keyframes tplFadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tplFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tplPageTurn {
+  from {
+    opacity: 0;
+    transform: rotateY(-26deg) translateX(26px);
+    transform-origin: left center;
+  }
+  to {
+    opacity: 1;
+    transform: rotateY(0) translateX(0);
+    transform-origin: left center;
+  }
+}
+
+@keyframes tplPageTurnBack {
+  from {
+    opacity: 0;
+    transform: rotateY(26deg) translateX(-26px);
+    transform-origin: right center;
+  }
+  to {
+    opacity: 1;
+    transform: rotateY(0) translateX(0);
+    transform-origin: right center;
+  }
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 900px) {
+  .tpl-orbital__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .tpl-orbital__chip {
+    width: 62px;
+    height: 62px;
+  }
+
+  .tpl-orbital__stage--horizontal .tpl-orbital__ringPath {
+    left: 6%;
+    right: 6%;
+    top: 14%;
+    bottom: 14%;
+  }
+
+  .tpl-orbital__stage--vertical .tpl-orbital__ringPath {
+    left: 14%;
+    right: 14%;
+    top: 6%;
+    bottom: 6%;
+  }
+
+  .tpl-orbital__list {
+    position: static;
+  }
+
+  .tpl-endless__row {
+    grid-template-columns: 1fr;
+  }
+
+  .tpl-endless__row--flip .tpl-endless__media {
+    order: 0;
+  }
+
+  .tpl-magazine__gutter {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .tpl-editorial__hero {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 0;
+    min-height: 0;
+  }
+
+  .tpl-editorial__heroCopy {
+    padding: clamp(32px, 8vw, 56px) var(--band-pad) 0;
+  }
+
+  .tpl-editorial__heroMedia {
+    min-height: 0;
+    height: clamp(240px, 54vw, 340px);
+    margin-top: 28px;
+  }
+
+  /* The edge blend turns into a top blend when the photo moves under the type. */
+  .tpl-editorial__heroMedia::before {
+    background: linear-gradient(180deg, var(--tpl-primary) 0%, transparent 34%);
+  }
+
+  .tpl-editorial__heroMedia:has(img.is-cutout) {
+    justify-self: center;
+    padding-right: 0;
+    padding-bottom: 34px;
+  }
+
+  /*
+   * The price competes with the name for horizontal space on a phone, which
+   * breaks the name across lines. The name takes the full width and the
+   * price sits beneath it.
+   */
+  .tpl-editorial__item {
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 0;
+  }
+
+  .tpl-editorial__itemHead {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 10px;
+    align-items: baseline;
+  }
+
+  .tpl-editorial__itemRule {
+    display: none;
+  }
+
+  .tpl-editorial__itemName {
+    grid-column: 1;
+  }
+
+  .tpl-editorial__itemPrice {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 15px;
+  }
+
+  .tpl-editorial__itemMedia {
+    width: 84px;
+  }
+
+  .tpl-editorial__signatureRow {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+
+  .tpl-editorial__signatureItem,
+  .tpl-editorial__signatureItem:first-child,
+  .tpl-editorial__signatureItem:nth-child(2),
+  .tpl-editorial__signatureItem:nth-child(3) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .tpl-editorial__signatureItem:first-child .tpl-editorial__signatureMedia {
+    height: clamp(220px, 58vw, 340px);
+  }
+
+  .tpl-editorial__itemMedia img,
+  .tpl-item__photo {
+    max-height: 200px;
+  }
+
+  .tpl-ingredient__stage {
+    aspect-ratio: 1 / 1;
+  }
+
+  .tpl-ingredient__hero {
+    width: 190px;
+    height: 190px;
+  }
+
+  .tpl-ingredient__plane {
+    min-width: 88px;
+    padding: 11px 15px;
+  }
+
+  .tpl-ingredient__planeLabel {
+    font-size: 12px;
+  }
+
+  .tpl-endless__chapter.is-compact .tpl-endless__row {
+    grid-template-columns: 68px 1fr;
+  }
+}
+
+/* ============================================
+   Art-direction layer
+   --------------------------------------------
+   Generated plate artwork, photographic scrims and the generated slots
+   that keep a menu with sparse photography looking intentional.
+   ============================================ */
+
+/*
+ * Generated plate studies (src/design/generated.tsx). They are SVG, so the
+ * only job here is to make them fill whatever slot the template provides.
+ */
+.tpl .tpl-poster {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Editorial: a hero with no photograph becomes a full-bleed plate study. */
+.tpl-editorial__heroMedia .tpl-poster {
+  position: absolute;
+  inset: 0;
+}
+
+.tpl-editorial__heroMedia.is-generated::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--tpl-primary) 92%, transparent) 0%,
+    transparent 34%
+  );
+  pointer-events: none;
+}
+
+/* Editorial: signature media holds either a photo or the plate study. */
+.tpl-editorial__signatureMedia > .tpl-poster {
+  width: 100%;
+  height: 100%;
+  transform: none;
+  transition: transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tpl-editorial__signatureItem:hover .tpl-editorial__signatureMedia > .tpl-poster {
+  transform: scale(1.03);
+}
+
+/* Orbital: the focal dish has no photo, so the plate carries the frame. */
+.tpl-orbital__focalArt {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.28));
+}
+
+.tpl-orbital__focalPlate {
+  width: 100%;
+  height: 100%;
+}
+
+/* Endless table: an alternating image column always has an image. */
+.tpl-endless__plate {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  object-fit: cover;
+}
+
+/* Magazine: the feature slot never collapses to an empty figure. */
+.tpl-magazine__featurePlate {
+  display: block;
+  width: 100%;
+  max-height: 340px;
+  aspect-ratio: 4 / 3;
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.1));
+  margin-top: 6px;
+}
+
+/* Café: card, hero and promo wells. */
+.tpl-cafe__cardPlate {
+  width: 100%;
+  height: 100%;
+}
+
+.tpl-cafe__heroPlate {
+  width: 100%;
+  height: 100%;
+}
+
+.tpl-cafe__promoPlate {
+  width: 100%;
+  max-width: 330px;
+  max-height: 380px;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 20px 26px rgba(67, 36, 31, 0.4));
+}
+
+/* Mosaïque: a typographic tile gets a plate watermark behind the type. */
+.tpl-mosaic__tilePoster {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.tpl-mosaic__tileType {
+  z-index: 2;
+}
+
+/*
+ * Scrims, chosen from the photograph's measured luminance rather than
+ * applied uniformly. A dark photograph needs almost nothing; a bright one
+ * (a white plate on a white table) needs a stronger band for the type.
+ */
+.tpl-mosaic__tile.is-dark .tpl-mosaic__tileBar {
+  background: linear-gradient(
+    180deg,
+    rgba(18, 10, 8, 0) 0%,
+    rgba(18, 10, 8, 0.22) 48%,
+    rgba(18, 10, 8, 0.74) 100%
+  );
+}
+
+.tpl-mosaic__tile.is-mid .tpl-mosaic__tileBar {
+  background: linear-gradient(
+    180deg,
+    rgba(18, 10, 8, 0) 0%,
+    rgba(18, 10, 8, 0.36) 44%,
+    rgba(18, 10, 8, 0.86) 100%
+  );
+}
+
+.tpl-mosaic__tile.is-bright .tpl-mosaic__tileBar {
+  padding-top: 72px;
+  background: linear-gradient(
+    180deg,
+    rgba(18, 10, 8, 0) 0%,
+    rgba(18, 10, 8, 0.5) 34%,
+    rgba(18, 10, 8, 0.96) 100%
+  );
+}
+
+.tpl-mosaic__tile.is-bright .tpl-mosaic__tileName {
+  text-shadow: 0 2px 22px rgba(10, 6, 4, 0.72);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl-editorial__signatureItem:hover .tpl-editorial__signatureMedia > .tpl-poster {
+    transform: none;
+  }
+}
+
+/* ============================================
+   Reduced motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .tpl *,
+  .tpl *::before,
+  .tpl *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* The hero parallax and the ingredient rotation are decorative, so they
+     are disabled outright rather than merely shortened. */
+  .tpl-editorial__heroMedia {
+    transform: none !important;
+  }
+
+  .tpl-ingredient__stage {
+    transform: none !important;
+  }
+}

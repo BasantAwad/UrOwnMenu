@@ -54,6 +54,18 @@ For burgers, layered cakes, sandwiches, parfaits and specialty drinks. Ingredien
 
 Seasonal menus and limited collections. Visual chapters, full-bleed photography, seasonal palette, chapter rail desktop/vertical story mobile. Direct menu index always available.
 
+## 14. Café Pedestal (built, from Drinko reference)
+
+**Best for:** coffee shops, drink bars and juice spots. Plaster-sand hero pierced by huge white type with the signature drink staged on a stone plinth; pill category tabs selecting the visible set; cream product cards with white photo insets (whole image, never cropped); price and Signature mark; `More` toggle; pastel signature band at the foot. No cart and no invented discounts — the owner's data only.
+
+## 15. Mosaïque (built, from AKME reference)
+
+**Best for:** desserts, patisseries, drink brands with strong photography. A dark-gallery wall of square poster tiles in alternating grounds (camel, maroon, deep red, cream). Photo tiles stage the dish on a radial key light; text tiles carry folio numerals, serif name, description and price. Wordmark top corner; the featured tile carries a gold inner border.
+
+## 16. Ingredient Story (built, owner-requested)
+
+**Best for:** desserts and drinks. Every item is a full-viewport chapter whose background is macro photography of the item's **hero ingredient** — the owner marks it per item (`main_ingredient`, defaulting to the first listed ingredient; never inferred from pixels). Macro photography is resolved at publish time from Openverse (CC0/PDM/CC-BY/CC-BY-SA only) with Wikimedia Commons as a licensed fallback, stored in R2, and credited in the public footer. Layouts alternate between a full-bleed cover chapter and a split composition where the dish floats across the seam (the pistachio-macaron reference) with the ingredient name set across the divide.
+
 ## Recommendation inputs
 
 Menu type, item/category count, photo coverage and quality, owner mood, story enabled, course-based flag, preferred orientation, mobile QR emphasis. Recommend up to three with reasons: drink plus confirmed ingredients -> Ingredient Universe; pizza and round photography -> Orbital; fine dining restrained palette -> Minimalist/Editorial; large photo-rich menu without landing -> Endless Table; bakery seasonal story -> Menu Magazine. Owner always decides.
@@ -61,3 +73,39 @@ Menu type, item/category count, photo coverage and quality, owner mood, story en
 ## Shared requirements
 
 Long text, missing photos, one item, many items, hidden price, variants, owner-provided dietary notes, QR/mobile use, reduced motion, keyboard, screen reader, loading/error/empty states, and fast readable fallback.
+
+## 17. Art-direction layer (shared by every template)
+
+Photographs are not dropped into fixed slots. Each stored image carries
+measured facts (`photo_meta`: focal point, frame ratio, mean luminance,
+contrast, coverage, treatment) and each template reads them:
+
+- **Placement.** `object-position` follows the measured focal point, so a
+  dish photographed low in frame stays visible in a `cover` crop.
+- **Scrims.** Type over photography gets a band sized by measured luminance
+  and contrast: `.is-dark`, `.is-mid`, `.is-bright` on the tile or frame. A
+  dark plate needs almost no scrim; a bright one gets a taller, denser band.
+- **Hero choice.** The leading image is the strongest photograph, not the
+  first row in the database.
+- **Cutouts.** `contain` in a transparent frame plus
+  `filter: drop-shadow()`; never `box-shadow`, which would paint the
+  rectangle. The pipeline normalises every cutout (trim, 90% fill, optical
+  centre, feather, square pad) before storage, so the subject's visual size
+  is consistent across templates.
+- **No photograph.** A deterministic SVG plate study fills the slot: seeded
+  from the item, tinted from the palette, transparent ground, `meet` scaling.
+  It is linework on the page, not a card or a placeholder initial.
+- **Missing media columns.** A course with no photo does not reserve the
+  media column in the Editorial list; the name keeps the full width.
+
+### Editorial Showcase specifics
+
+- Hero media column ratio comes from the hero's frame (`--hero-text` /
+  `--hero-media`).
+- Signature row adapts to 1, 2 or 3+ featured items: one spans the page, two
+  become an even pair, three or more use the asymmetric feature plus
+  supporting rows.
+- Chapter bands alternate ground and bleed to the viewport edges; a filled
+  box inset by the menu padding would read as a floating white rectangle.
+- Media frames position their image absolutely, so a portrait photograph is
+  contained by the frame rather than setting its height.

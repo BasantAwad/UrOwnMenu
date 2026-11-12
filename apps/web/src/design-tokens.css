@@ -1,0 +1,68 @@
+/* ============================================================
+   UrOwnMenu - shared design tokens
+   One scale for type, space, radii, elevation and motion so the
+   eight palettes and eight templates feel like one product.
+   Palette colours live in the per-palette theme tokens; these are
+   the colour-agnostic roles. SIL-OFL fonts: /fonts (OFL-*.txt).
+   ============================================================ */
+
+:root {
+  /* ---- Type ----
+     Templates read --tpl-display / --tpl-body. Both are set here to the
+     self-hosted house stacks, and paletteVars() overrides them when a brand
+     stores its own typography. Never hardcode a family inside a template. */
+  --tpl-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --tpl-sans: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --tpl-body: var(--tpl-sans);
+
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: clamp(26px, 3.2vw, 34px);
+  --text-title: clamp(30px, 5vw, 54px);
+  --text-display: clamp(38px, 6.8vw, 68px);
+
+  /* ---- Space ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 56px;
+  --space-10: 72px;
+
+  /* ---- Radii ---- */
+  --radius-s: 8px;
+  --radius-m: 14px;
+  --radius-l: 20px;
+  --radius-pill: 999px;
+
+  /* ---- Elevation ---- */
+  --shadow-1: 0 1px 2px rgba(20, 16, 12, 0.08), 0 6px 18px -10px rgba(20, 16, 12, 0.18);
+  --shadow-2: 0 2px 4px rgba(20, 16, 12, 0.1), 0 18px 46px -20px rgba(20, 16, 12, 0.36);
+  --shadow-photo: 0 22px 46px -16px rgba(20, 16, 12, 0.42);
+
+  /* ---- Motion (house curves; keep in sync with src/motion.ts) ---- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 180ms;
+  --dur-base: 320ms;
+  --dur-slow: 700ms;
+
+  /* ---- Focus ---- */
+  --focus: #b4540a;
+}
+
+/* Editorial display defaults. Fraunces gets optical sizing automatically. */
+.tpl h1,
+.tpl h2,
+.tpl h3 {
+  font-optical-sizing: auto;
+  letter-spacing: -0.012em;
+}

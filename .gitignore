@@ -1,0 +1,44 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+# Generated capture artifacts
+shots
+shots-*
+sitecheck
+.wranglestate
+.wrangler
+
+# Stale pre-monorepo Vite prototype (superseded by apps/) - untracked on purpose
+/src/
+/index.html
+/tsconfig.json
+/package.json
+/package-lock.json
+/verify-foundation.sh
+/migrations/
+/public/
+
+# Stray capture artifacts (kept on disk, never committed)
+shot-*.png
+fold-*.png
+centerline.png
+sitecheck*/
+apps/web/src/assets/hero.png
+apps/api/shot-*.png
+apps/api/.dev.vars

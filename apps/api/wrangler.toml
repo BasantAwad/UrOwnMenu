@@ -1,0 +1,31 @@
+name = "api"
+main = "index.ts"
+compatibility_date = "2026-11-10"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "development"
+# Base URL of the web app that renders public menus.
+# Local dev: the Vite server on port 5173.
+# Production: your Cloudflare Pages domain.
+PUBLIC_WEB_URL = "http://localhost:5173"
+
+# Local D1 database. For production replace database_id with the real D1 id.
+[[d1_databases]]
+binding = "DB"
+database_name = "urownmenu"
+database_id = "local"
+
+# Media storage. Local dev uses the built-in miniflare simulator.
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "urownmenu-media"
+
+# Workers AI is intentionally NOT bound: every AI route has a deterministic
+# local implementation, so the worker runs fully offline on the free tier.
+# To enable real Workers AI, add:
+#   [ai]
+#   binding = "AI"
+
+[observability]
+enabled = true
