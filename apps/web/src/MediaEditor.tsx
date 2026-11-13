@@ -42,7 +42,7 @@ const ASPECT_PRESETS: Array<{ label: string; ratio: number | null }> = [
  * progress so the owner can cancel.
  */
 export default function MediaEditor({ file, onCancel, onApply }: Props) {
-  const [adjustments, setAdjustments] = React.useState<Adjustments>(DEFAULT_ADJUSTMENTS)
+  const [adjustments, setAdjustments] = React.useState<Adjustments>({ ...DEFAULT_ADJUSTMENTS, auto: 0.6 })
   const [sourceUrl, setSourceUrl] = React.useState<string>('')
   const [previewUrl, setPreviewUrl] = React.useState<string>('')
   const [natural, setNatural] = React.useState<{ width: number; height: number }>({ width: 0, height: 0 })
@@ -266,6 +266,22 @@ export default function MediaEditor({ file, onCancel, onApply }: Props) {
 
             <section className="mediaEditor__group">
               <h3 className="mediaEditor__groupTitle">Light &amp; colour</h3>
+              <label className="mediaEditor__slider">
+                <span>Auto-enhance <em>{adjustments.auto === 0 ? 'off' : Math.round(adjustments.auto * 100) + '%'}</em></span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={adjustments.auto}
+                  onChange={(e) => update({ auto: Number(e.target.value) })}
+                  aria-describedby="auto-enhance-hint"
+                />
+              </label>
+              <p id="auto-enhance-hint" className="mediaEditor__hint">
+                Balances exposure, white point and colour in one step, keeping hue and skin of the dish
+                intact. Runs in your browser; nothing is uploaded. Fine-tune with the sliders below.
+              </p>
               <label className="mediaEditor__slider">
                 <span>Exposure <em>{adjustments.exposure.toFixed(2)}×</em></span>
                 <input

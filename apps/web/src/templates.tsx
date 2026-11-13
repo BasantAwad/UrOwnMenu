@@ -7,7 +7,8 @@ import { Magnetic } from '@animate-ui/react/primitives/effects/magnetic'
 const PlateScene = React.lazy(() => import('./three/PlateScene'))
 import { MotionConfig, motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react'
 import { Reveal, usePointerTilt } from './motion-primitives'
-import { PlatedPoster } from './design/generated'
+import { PlatedPoster, hashString } from './design/generated'
+import { Art, IcedCoffee, LavaCake, OrangeJuice, RoundDishes, type Dish } from './design/dishes'
 import { heroSplit, overlayClass, pickHero } from './design/art-director'
 import type { PublishedSnapshot, MenuItem, TemplateKey } from './api'
 import {
@@ -19,6 +20,7 @@ import {
 } from './motion'
 import { TabIndicator } from './motion-parts'
 import './templates.css'
+import './story.css'
 
 export type TemplateProps = {
   snapshot: PublishedSnapshot
@@ -1799,251 +1801,357 @@ type ChapterProps = {
   item: MenuItem
   category: string
   number: string
+  total: number
   hero: StoryHero
   heroPhoto?: { url: string }
-}
-
-/** Chapter-shared bits. */
-function StoryMetaRow({ item, hero }: { item: MenuItem; hero: StoryHero }) {
-  const price = formatPrice(item.price_minor, item.currency_code)
-  const chips = (item.ingredients ?? []).slice(0, 4)
-  return (
-    <>
-      <div className="tpl-story__metaRow">
-        <span className="tpl-story__price">{price}</span>
-        {hero && <span className="tpl-story__heroTag">Hero ingredient: {hero.name}</span>}
-      </div>
-      {chips.length > 0 && (
-        <ul className="tpl-story__chips">
-          {chips.map((c) => (
-            <li key={c}>{c}</li>
-          ))}
-        </ul>
-      )}
-    </>
-  )
+  flip: boolean
+  fitVw: number
 }
 
 /**
- * Full-bleed chapter: macro hero photography drifts behind a darkened
- * gradient, the copy sets big and high-contrast, the dish photo floats
- * opposite. useScroll scrubs the backdrop at its own rate, so the page
- * feels layered instead of flat.
+ * Procedural stand-in for a macro photograph that could not be resolved.
+ * Deterministic per ingredient: the same word always gets the same hue, so a
+ * menu never reshuffles between visits, and the chapter keeps its depth
+ * (colour field + bokeh + grain) instead of collapsing to flat ink.
  */
-function StoryCover({ item, category, number, hero, heroPhoto }: ChapterProps) {
-  const reduced = useReducedMotion()
-  const ref = React.useRef<HTMLElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start end', 'end start'],
-  })
-  const bgY = useSpring(useTransform(scrollYProgress, [0, 1], ['-9%', '9%']), {
-    stiffness: 110,
-    damping: 24,
-    mass: 0.7,
-  })
-  const photoY = useSpring(useTransform(scrollYProgress, [0, 1], ['7%', '-7%']), {
-    stiffness: 110,
-    damping: 24,
-    mass: 0.7,
-  })
+function proceduralMacro(seed: string): React.CSSProperties {
+  const h = hashString(seed || 'x')
+  // Food-aware hue: a tomato chapter must not glow blue. Known ingredients
+  // map to their natural colour; anything else lands in the warm/earth
+  // range (amber to olive) so a random hash can never produce an alien tone.
+  const key = seed.toLowerCase()
+  const named: Array<[RegExp, number, number]> = [
+    [/(tomato|chili|chilli|pepper|strawberr|cherry|beet|pomegran)/, 6, 62],
+    [/(raspberr|berry|hibiscus|rose|plum|fig)/, 340, 48],
+    [/(cocoa|chocolate|cacao|coffee|cold-brew|espresso|mocha|cinnamon|date)/, 22, 52],
+    [/(orange|carrot|mango|apricot|peach|saffron|turmeric|honey|caramel)/, 30, 78],
+    [/(vanilla|cream|milk|butter|cheese|mozzarella|egg|cardamom|almond|oat)/, 42, 44],
+    [/(lemon|banana|pineapple|corn|lime-zest)/, 52, 70],
+    [/(basil|mint|zucchini|cucumber|spinach|pistachio|matcha|olive|avocado|lime|herb|pesto|pea)/, 112, 46],
+    [/(blueberr|grape|lavender|eggplant|aubergine)/, 262, 40],
+    [/(ice|coconut|yoghurt|yogurt|sugar|salt|flour)/, 205, 18],
+  ]
+  const match = named.find(([re]) => re.test(key))
+  const warm = [8, 18, 28, 38, 48, 96, 112][h % 7]
+  const hue = match ? match[1] : warm
+  const sat = match ? match[2] : 48
+  const hue2 = (hue + 14 + ((h >> 4) % 20)) % 360
+  const x1 = 56 + (h % 30)
+  const y1 = 18 + ((h >> 3) % 30)
+  const x2 = 14 + ((h >> 6) % 30)
+  const y2 = 64 + ((h >> 9) % 26)
+  return {
+    backgroundImage: [
+      `radial-gradient(38% 46% at ${x1}% ${y1}%, hsl(${hue} ${sat + 12}% 34% / .85), transparent 72%)`,
+      `radial-gradient(34% 42% at ${x2}% ${y2}%, hsl(${hue2} ${sat}% 24% / .8), transparent 70%)`,
+      `radial-gradient(90% 70% at 50% 120%, hsl(${hue} ${Math.round(sat * 0.7)}% 10%), transparent 70%)`,
+      `linear-gradient(160deg, hsl(${hue} ${Math.round(sat * 0.6)}% 9%), hsl(${hue2} ${Math.round(sat * 0.7)}% 14%))`,
+    ].join(','),
+  }
+}
 
-  return (
-    <section
-      ref={ref}
-      className={'tpl-story__section tpl-story__section--cover' + (heroPhoto ? ' has-hero' : '')}
-      aria-label={item.name}
-    >
-      {heroPhoto && (
-        <motion.span
-          className="tpl-story__coverBg"
-          style={{ backgroundImage: 'url("' + heroPhoto.url + '")', y: bgY }}
-          aria-hidden="true"
-        />
-      )}
-      <span className="tpl-story__folio tpl-story__folio--cover" aria-hidden="true">
-        {number}
-      </span>
-
-      <div className="tpl-story__coverBody">
-        <Reveal y={26}>
-          <span className="tpl-story__eyebrow">{category}</span>
-          <h2 className="tpl-story__coverName">{item.name}</h2>
-        </Reveal>
-        {item.short_description && (
-          <p className="tpl-story__desc">{item.short_description}</p>
-        )}
-        <StoryMetaRow item={item} hero={hero} />
-      </div>
-
-      {item.photo_url && (
-        <div className="tpl-story__coverPhoto">
-          {reduced ? (
-            <img
-              src={item.photo_url}
-              alt={item.name}
-              className={photoClass(item)}
-              loading="lazy"
-              {...photoSize(item)}
-            />
-          ) : (
-            <motion.img
-              src={item.photo_url}
-              alt={item.name}
-              style={{ y: photoY }}
-              className={photoClass(item)}
-              loading="lazy"
-              {...photoSize(item)}
-            />
-          )}
-        </div>
-      )}
-
-      {heroPhoto && (
-        <span className="tpl-story__sideLabel" aria-hidden="true">
-          {hero!.name}
-        </span>
-      )}
-    </section>
-  )
+/** Illustrated plate used when an item has no photograph at all. */
+function pickIllustration(name: string): Dish | null {
+  const n = name.toLowerCase()
+  if (/(coffee|latte|espresso|frapp|brew|mocha|cappuc|iced)/.test(n)) return IcedCoffee
+  if (/(juice|orange|lemonade|smoothie)/.test(n)) return OrangeJuice
+  if (/(lava|cake|brownie|chocolate|fondant)/.test(n)) return LavaCake
+  if (/(pizza|margherita)/.test(n)) return RoundDishes.pizza
+  if (/(donut|doughnut)/.test(n)) return RoundDishes.donut
+  if (/(tart|pie|cheesecake)/.test(n)) return RoundDishes.tart
+  if (/(pancake|waffle|crepe)/.test(n)) return RoundDishes.pancakes
+  if (/(burger|sandwich)/.test(n)) return RoundDishes.burger
+  return null
 }
 
 /**
- * Split chapter: the macro plate above, ink below, the dish photo floating
- * across the seam - the pistachio macaron reference.
+ * The dish itself, in the right treatment for what we actually have:
+ *  - cutout      : floats, lit from above, with a contact shadow and a
+ *                  faint reflection, never boxed or cropped;
+ *  - photograph  : set in an arch window with its own shadow and an offset
+ *                  hairline, so a rectangle reads as a deliberate frame;
+ *  - nothing     : a drawn plate, so the slot is never a hole.
  */
-function StorySplit({ item, category, number, hero, heroPhoto }: ChapterProps) {
-  const ref = React.useRef<HTMLElement>(null)
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start end', 'end start'],
-  })
-  const bgY = useSpring(useTransform(scrollYProgress, [0, 1], ['-7%', '7%']), {
-    stiffness: 110,
-    damping: 24,
-    mass: 0.7,
-  })
+function StoryDish({ item }: { item: MenuItem }) {
+  const art = !item.photo_url ? pickIllustration(item.name) : null
+  const isCutout = Boolean(item.photo_url && item.photo_is_cutout)
+  const ratio =
+    item.photo_width && item.photo_height ? item.photo_width / item.photo_height : art ? art.w / art.h : 1
 
-  return (
-    <section
-      ref={ref}
-      className={
-        'tpl-story__section tpl-story__section--split' + (heroPhoto ? ' has-hero' : '')
-      }
-      aria-label={item.name}
-    >
-      <div className="tpl-story__splitTop">
-        {heroPhoto && (
-          <motion.span
-            className="tpl-story__splitBg"
-            style={{ backgroundImage: 'url("' + heroPhoto.url + '")', y: bgY }}
-            aria-hidden="true"
-          />
-        )}
-        {heroPhoto ? (
-          <span className="tpl-story__splitName">{hero!.name}</span>
-        ) : (
-          <span className="tpl-story__splitFallback">{hero?.name ?? item.name}</span>
-        )}
-        <span className="tpl-story__folio" aria-hidden="true">{number}</span>
-      </div>
-
-      {item.photo_url && (
-        <div className="tpl-story__splitPhoto">
+  if (item.photo_url && !isCutout) {
+    return (
+      <div className="story-dish story-dish--photo">
+        <div className="story-arch" style={{ aspectRatio: '4 / 5' }}>
           <img
             src={item.photo_url}
             alt={item.name}
-            className={photoClass(item)}
             loading="lazy"
+            style={photoFrameStyle(item)}
             {...photoSize(item)}
           />
         </div>
-      )}
-
-      <div className="tpl-story__splitBody">
-        <Reveal y={26}>
-          <span className="tpl-story__eyebrow">{category}</span>
-          <h2 className="tpl-story__name">{item.name}</h2>
-        </Reveal>
-        {item.short_description && <p className="tpl-story__desc">{item.short_description}</p>}
-        <StoryMetaRow item={item} hero={hero} />
-      </div>
-    </section>
-  )
-}
-
-/**
- * The owner's idea, taken literally: every item is its own chapter, and the
- * chapter's background is a macro photograph of the item's hero ingredient,
- * resolved from Openverse / Wikimedia Commons at publish time. Layouts
- * alternate between a full-bleed cover and a split composition where the
- * product photo floats across the seam - the pistachio macaron reference -
- * with an ink half carrying the copy and the ingredient name set across
- * the divide.
- *
- * Dessert menus are the intended home, but any menu gets the treatment.
- */
-function IngredientStory({ snapshot }: TemplateProps) {
-  const categories = allCategories(snapshot)
-  const entries = categories.flatMap((cat) =>
-    cat.items.map((item) => ({ item, category: cat.name })),
-  )
-
-  if (entries.length === 0) {
-    return (
-      <div className="tpl tpl-story">
-        <p className="tpl-story__empty">Nothing on the board yet.</p>
+        <span className="story-arch__line" aria-hidden="true" />
       </div>
     )
   }
 
+  return (
+    <div
+      className={'story-dish story-dish--cutout' + (ratio > 1.05 ? ' is-wide' : '')}
+      style={{ ['--ratio' as string]: String(ratio) }}
+    >
+      {!art && <span className="story-dish__shadow" aria-hidden="true" />}
+      {isCutout ? (
+        <img
+          className="story-dish__img"
+          src={item.photo_url as string}
+          alt={item.name}
+          loading="lazy"
+          {...photoSize(item)}
+        />
+      ) : art ? (
+        <Art dish={art} className="story-dish__img is-art" />
+      ) : (
+        <GeneratedPlate item={item} className="story-dish__img is-plate" tone="cream" />
+      )}
+    </div>
+  )
+}
+
+/**
+ * One chapter. Six layers, back to front, each moving at its own rate:
+ * macro photograph -> grain + vignette -> giant ingredient word -> light
+ * bloom -> dish -> copy. The depth comes from that stacking and from the
+ * light: the bloom sits behind the dish, the shadow under it, and nothing
+ * else on the page is lit.
+ */
+function StoryChapter({ item, category, number, total, hero, heroPhoto, flip, fitVw }: ChapterProps) {
+  const reduced = useReducedMotion()
+  const ref = React.useRef<HTMLElement>(null)
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
+  const spring = { stiffness: 110, damping: 24, mass: 0.7 }
+  const bgY = useSpring(useTransform(scrollYProgress, [0, 1], ['-7%', '7%']), spring)
+  const bgScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.16, 1.08, 1.16])
+  const dishY = useSpring(useTransform(scrollYProgress, [0, 1], ['5%', '-5%']), spring)
+  const wordX = useSpring(useTransform(scrollYProgress, [0, 1], flip ? ['-2.5%', '2.5%'] : ['2.5%', '-2.5%']), spring)
+  const bloomY = useSpring(useTransform(scrollYProgress, [0, 1], ['-8%', '8%']), spring)
+  const tilt = usePointerTilt(3.5)
+
+  const word = (hero?.name ?? item.name).toUpperCase()
+  const words = word.split(/\s+/).filter(Boolean)
+  const price = formatPrice(item.price_minor, item.currency_code)
+  const chips = (item.ingredients ?? []).slice(0, 5)
+  const bgStyle: React.CSSProperties = heroPhoto
+    ? { backgroundImage: 'url("' + heroPhoto.url + '")' }
+    : proceduralMacro(hero?.slug ?? item.id)
+
+  const dish = <StoryDish item={item} />
+
+  return (
+    <section
+      ref={ref}
+      id={'chapter-' + number}
+      data-chapter={number}
+      className={
+        'story-ch' +
+        (flip ? ' is-flip' : '') +
+        (heroPhoto ? ' has-macro' : ' has-proc') +
+        (item.photo_url && !item.photo_is_cutout ? ' has-photo' : '')
+      }
+      aria-label={item.name}
+    >
+      <div className="story-ch__bgwrap" aria-hidden="true">
+        <motion.span
+          className="story-ch__bg"
+          style={reduced ? bgStyle : { ...bgStyle, y: bgY, scale: bgScale }}
+        />
+      </div>
+      <span className="story-ch__grain" aria-hidden="true" />
+      <span className="story-ch__vignette" aria-hidden="true" />
+
+      <motion.div
+        className="story-ch__word"
+        aria-hidden="true"
+        style={{ ['--fit' as string]: fitVw.toFixed(2), ...(reduced ? {} : { x: wordX }) } as React.CSSProperties}
+      >
+        {words.map((w, i) => (
+          <span key={w + i}>{w}</span>
+        ))}
+      </motion.div>
+
+      <div className="story-ch__top" aria-hidden="true">
+        <span className="story-ch__no">{number}</span>
+        <span className="story-ch__of">/ {String(total).padStart(2, '0')}</span>
+      </div>
+
+      <motion.span className="story-ch__bloom" aria-hidden="true" style={reduced ? undefined : { y: bloomY }} />
+
+      <div className="story-ch__stage" {...tilt.bind}>
+        <motion.div
+          className="story-ch__float"
+          style={reduced ? undefined : { y: dishY, rotateX: tilt.rotateX, rotateY: tilt.rotateY }}
+        >
+          {dish}
+        </motion.div>
+      </div>
+
+      <div className="story-ch__copy">
+        <Reveal y={22}>
+          <span className="story-ch__eyebrow">{category}</span>
+          <h2 className="story-ch__name">{item.name}</h2>
+        </Reveal>
+        {item.short_description && <p className="story-ch__desc">{item.short_description}</p>}
+        <div className="story-ch__meta">
+          {price && <span className="story-ch__price">{price}</span>}
+          {hero && (
+            <span className="story-ch__hero">
+              <i aria-hidden="true" /> Hero ingredient <b>{hero.name}</b>
+            </span>
+          )}
+        </div>
+        {chips.length > 0 && (
+          <ul className="story-ch__chips" aria-label="Ingredients">
+            {chips.map((c) => (
+              <li key={c}>{c}</li>
+            ))}
+          </ul>
+        )}
+        {(item.dietary_labels?.length > 0 || item.allergens?.length > 0) && (
+          <p className="story-ch__notes">
+            {[...(item.dietary_labels ?? []), ...(item.allergens?.length ? ['Contains ' + item.allergens.join(', ')] : [])].join(' · ')}
+          </p>
+        )}
+      </div>
+
+      {hero && (
+        <span className="story-ch__side" aria-hidden="true">
+          {hero.name}
+        </span>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Ingredient Story. Every item is its own chapter and the chapter's ground is
+ * the macro photography of its hero ingredient (resolved at publish from
+ * Openverse / Wikimedia Commons, credited in the public footer). The page
+ * opens with an index so the full menu is one tap away, a chapter rail keeps
+ * position, and every chapter stacks the same six depth layers so the whole
+ * scroll reads as one lit set rather than eight posters.
+ */
+function IngredientStory({ snapshot }: TemplateProps) {
+  const categories = allCategories(snapshot)
+  const entries = categories.flatMap((cat) => cat.items.map((item) => ({ item, category: cat.name })))
   const photos = snapshot.ingredientPhotos ?? {}
+  const reduced = useReducedMotion()
+  const [active, setActive] = React.useState('01')
+
+  React.useEffect(() => {
+    const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-chapter]'))
+    if (nodes.length === 0 || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(
+      (list) => {
+        for (const e of list) if (e.isIntersecting) setActive((e.target as HTMLElement).dataset.chapter || '01')
+      },
+      { rootMargin: '-45% 0px -45% 0px' },
+    )
+    nodes.forEach((n) => io.observe(n))
+    return () => io.disconnect()
+  }, [entries.length])
+
+  if (entries.length === 0) {
+    return (
+      <div className="tpl tpl-story">
+        <p className="story-empty">Nothing on the board yet.</p>
+      </div>
+    )
+  }
+
+  const go = (no: string) => (e: React.MouseEvent) => {
+    e.preventDefault()
+    document.getElementById('chapter-' + no)?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+  }
 
   return (
     <div className="tpl tpl-story">
-      <header className="tpl-story__masthead">
-        <span className="tpl-eyebrow">The ingredient story</span>
-        <h1 className="tpl-story__title">{snapshot.restaurant.name}</h1>
-        {snapshot.restaurant.description && (
-          <p className="tpl-story__lede">{snapshot.restaurant.description}</p>
-        )}
-        <span className="tpl-story__count">
-          {entries.length} {entries.length === 1 ? 'chapter' : 'chapters'}
-        </span>
+      <header className="story-mast">
+        <div className="story-mast__lead">
+          <span className="story-mast__eyebrow">
+            The ingredient story <i aria-hidden="true" /> {entries.length} {entries.length === 1 ? 'chapter' : 'chapters'}
+          </span>
+          <h1 className="story-mast__title">{snapshot.restaurant.name}</h1>
+          {snapshot.restaurant.description && <p className="story-mast__lede">{snapshot.restaurant.description}</p>}
+        </div>
+        <nav className="story-index" aria-label="Menu index">
+          <ol>
+            {entries.map(({ item, category }, idx) => {
+              const no = String(idx + 1).padStart(2, '0')
+              return (
+                <li key={item.id}>
+                  <a href={'#chapter-' + no} onClick={go(no)}>
+                    <span className="story-index__no">{no}</span>
+                    <span className="story-index__name">
+                      {item.name}
+                      <small>{category}</small>
+                    </span>
+                    <span className="story-index__dots" aria-hidden="true" />
+                    <span className="story-index__price">{formatPrice(item.price_minor, item.currency_code)}</span>
+                  </a>
+                </li>
+              )
+            })}
+          </ol>
+        </nav>
       </header>
+
+      <div className="story-railwrap" aria-hidden={entries.length < 2}>
+        <nav className="story-rail" aria-label="Chapters">
+          {entries.map(({ item }, idx) => {
+            const no = String(idx + 1).padStart(2, '0')
+            return (
+              <a
+                key={item.id}
+                href={'#chapter-' + no}
+                onClick={go(no)}
+                className={active === no ? 'is-active' : ''}
+                aria-current={active === no ? 'true' : undefined}
+                aria-label={'Chapter ' + no + ': ' + item.name}
+              >
+                <span>{no}</span>
+              </a>
+            )
+          })}
+        </nav>
+      </div>
 
       {entries.map(({ item, category }, idx) => {
         const number = String(idx + 1).padStart(2, '0')
         const hero = heroIngredientOf(item)
         const heroPhoto = hero ? photos[hero.slug] : undefined
-        return idx % 2 === 1 ? (
-          <StorySplit
+        const longest = Math.max(...(hero?.name ?? item.name).split(/\s+/).map((w) => w.length), 4)
+        // Size the word so its longest line spans ~88% of the viewport, capped.
+        const fitVw = Math.min(17.5, 88 / (longest * 0.74))
+        return (
+          <StoryChapter
             key={item.id}
             item={item}
             category={category}
             number={number}
+            total={entries.length}
             hero={hero}
             heroPhoto={heroPhoto}
-          />
-        ) : (
-          <StoryCover
-            key={item.id}
-            item={item}
-            category={category}
-            number={number}
-            hero={hero}
-            heroPhoto={heroPhoto}
+            flip={idx % 2 === 1}
+            fitVw={fitVw}
           />
         )
       })}
 
-      <footer className="tpl-story__visit">
-        <span className="tpl-eyebrow">Visit us</span>
-        <p className="tpl-story__visitLine">
-          {snapshot.restaurant.address_text ?? snapshot.restaurant.name}
-        </p>
+      <footer className="story-visit">
+        <span className="story-mast__eyebrow">Visit us</span>
+        <p className="story-visit__line">{snapshot.restaurant.address_text ?? snapshot.restaurant.name}</p>
         {snapshot.restaurant.phone && (
-          <a className="tpl-story__visitPhone" href={'tel:' + snapshot.restaurant.phone}>
+          <a className="story-visit__phone" href={'tel:' + snapshot.restaurant.phone}>
             {snapshot.restaurant.phone}
           </a>
         )}

@@ -25,6 +25,7 @@ import {
   normaliseCutout,
   type PhotoMeta,
 } from './media-intelligence'
+import { autoEnhance, unsharpLuma } from './enhance'
 
 export type Adjustments = {
   /** 0.5 - 2.0. 1 = unchanged. */
@@ -35,8 +36,10 @@ export type Adjustments = {
   saturation: number
   /** -1 (cool/blue) to 1 (warm/orange). 0 = unchanged. */
   temperature: number
-  /** 0 - 1. Restrained unsharp mask. */
+  /** 0 - 1. Restrained luma-only unsharp mask. */
   sharpen: number
+  /** 0 - 1. Auto-enhance strength (levels, gamma, white balance, vibrance). 0 = off. */
+  auto: number
   /** Target width/height ratio. null = keep original ratio (no crop). */
   aspectRatio: number | null
   /** 0 - 1. Horizontal focal point of the crop window. */
@@ -51,6 +54,7 @@ export const DEFAULT_ADJUSTMENTS: Adjustments = {
   saturation: 1,
   temperature: 0,
   sharpen: 0,
+  auto: 0,
   aspectRatio: null,
   focusX: 0.5,
   focusY: 0.5,
@@ -229,32 +233,19 @@ function applyToneAdjustments(
   context.putImageData(imageData, 0, 0)
 }
 
-/**
- * Restrained unsharp mask. A full 3x3 Laplacian is softened by a small
- * amount so food photos gain crispness without halos.
- */
-function applySharpen(context: CanvasRenderingContext2D, width: number, height: number, amount: number) {
-  if (amount <= 0) return
-
+/** Apply auto-enhance to a canvas in place. Transparent pixels are ignored. */
+function enhanceContext(context: CanvasRenderingContext2D, width: number, height: number, strength: number) {
+  if (strength <= 0) return
   const imageData = context.getImageData(0, 0, width, height)
-  const src = new Uint8ClampedArray(imageData.data)
-  const dst = imageData.data
+  autoEnhance(imageData.data, width, height, strength)
+  context.putImageData(imageData, 0, 0)
+}
 
-  const strength = amount * 0.6
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      const idx = (y * width + x) * 4
-      for (let c = 0; c < 3; c++) {
-        const center = src[idx + c]
-        const neighbours =
-          src[idx - 4 + c] + src[idx + 4 + c] +
-          src[idx - width * 4 + c] + src[idx + width * 4 + c]
-        const highPass = center - neighbours / 4
-        dst[idx + c] = center + highPass * strength
-      }
-    }
-  }
-
+/** Luma-only unsharp mask on a canvas in place (see enhance.ts). */
+function sharpenContext(context: CanvasRenderingContext2D, width: number, height: number, amount: number) {
+  if (amount <= 0) return
+  const imageData = context.getImageData(0, 0, width, height)
+  unsharpLuma(imageData.data, width, height, amount)
   context.putImageData(imageData, 0, 0)
 }
 
@@ -300,8 +291,11 @@ export async function prepareImage(
     0, 0, outWidth, outHeight,
   )
 
+  // Auto-enhance first (one analysis pass), then the owner's manual tweaks on
+  // top of it, then sharpen last so it works on the final tones.
+  enhanceContext(context, outWidth, outHeight, adjustments.auto)
   applyToneAdjustments(context, outWidth, outHeight, adjustments)
-  applySharpen(context, outWidth, outHeight, adjustments.sharpen)
+  sharpenContext(context, outWidth, outHeight, adjustments.sharpen)
 
   const dataUrl = canvas.toDataURL('image/jpeg', 0.86)
   return { dataUrl, width: outWidth, height: outHeight, cutout: false }
@@ -603,8 +597,9 @@ export async function prepareForUpload(
     if (framed.meta.treatment === 'contain') {
       const framedCtx = framed.canvas.getContext('2d', { willReadFrequently: true })
       if (!framedCtx) throw new Error('Canvas is not available in this browser')
+      enhanceContext(framedCtx, framed.canvas.width, framed.canvas.height, adjustments.auto)
       applyToneAdjustments(framedCtx, framed.canvas.width, framed.canvas.height, adjustments)
-      applySharpen(framedCtx, framed.canvas.width, framed.canvas.height, adjustments.sharpen)
+      sharpenContext(framedCtx, framed.canvas.width, framed.canvas.height, adjustments.sharpen)
       cleanAlphaEdge(framedCtx, framed.canvas.width, framed.canvas.height)
 
       const out = downscale(framed.canvas, maxEdge)
@@ -662,8 +657,11 @@ export async function prepareForUpload(
     0, 0, outWidth, outHeight,
   )
 
+  // Auto-enhance first (one analysis pass), then the owner's manual tweaks on
+  // top of it, then sharpen last so it works on the final tones.
+  enhanceContext(context, outWidth, outHeight, adjustments.auto)
   applyToneAdjustments(context, outWidth, outHeight, adjustments)
-  applySharpen(context, outWidth, outHeight, adjustments.sharpen)
+  sharpenContext(context, outWidth, outHeight, adjustments.sharpen)
 
   // Measure the stored file, not the original: the crop has changed the frame.
   const meta = analysePhoto(canvas, false)
