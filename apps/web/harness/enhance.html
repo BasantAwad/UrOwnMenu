@@ -1,0 +1,14 @@
+<!doctype html><html><body style="margin:0;background:#111;color:#ddd;font:12px sans-serif"><div id="o" style="display:flex;gap:10px;padding:10px"></div><script type="module">
+import { autoEnhance, unsharpLuma } from '/src/enhance.ts'
+const load = (u) => new Promise((r) => { const i = new Image(); i.onload = () => r(i); i.src = u })
+const out = document.getElementById('o')
+for (const [u, lab] of [['/harness/drink.png','drink'],['/harness/food.png','food']]) {
+  const img = await load(u); const s = Math.min(1, 520 / img.naturalHeight)
+  const w = Math.round(img.naturalWidth * s), h = Math.round(img.naturalHeight * s)
+  const a = document.createElement('canvas'); a.width = w; a.height = h; const ac = a.getContext('2d'); ac.drawImage(img, 0, 0, w, h)
+  const b = document.createElement('canvas'); b.width = w; b.height = h; const bc = b.getContext('2d'); bc.drawImage(img, 0, 0, w, h)
+  const d = bc.getImageData(0, 0, w, h); const rep = autoEnhance(d.data, w, h, 0.6); unsharpLuma(d.data, w, h, 0.4); bc.putImageData(d, 0, 0)
+  for (const [c, t] of [[a, 'before'], [b, 'after  mean ' + rep.meanBefore.toFixed(0) + '→' + rep.meanAfter.toFixed(0) + ' γ' + rep.gamma.toFixed(2) + ' wb ' + rep.gains.map(g=>g.toFixed(2)).join('/')]]) { const f = document.createElement('div'); f.append(c, document.createTextNode(lab + ' ' + t)); f.style.cssText='display:flex;flex-direction:column;gap:4px'; out.append(f) }
+}
+document.title = 'ready'
+</script></body></html>

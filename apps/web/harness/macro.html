@@ -1,0 +1,17 @@
+<!doctype html><html><body style="margin:0"><canvas id="c" width="1600" height="1000"></canvas><script>
+const c=document.getElementById('c'),x=c.getContext('2d');let s=7;const R=()=>(s=(s*16807)%2147483647)/2147483647;
+const W=1600,H=1000;
+function bokeh(base,cols,n,rmin,rmax){const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,base[0]);g.addColorStop(1,base[1]);x.fillStyle=g;x.fillRect(0,0,W,H);
+ for(let i=0;i<n;i++){const r=rmin+R()*(rmax-rmin),px=R()*W,py=R()*H;const rg=x.createRadialGradient(px,py,0,px,py,r);const col=cols[i%cols.length];rg.addColorStop(0,col+'cc');rg.addColorStop(.7,col+'55');rg.addColorStop(1,col+'00');x.fillStyle=rg;x.beginPath();x.arc(px,py,r,0,7);x.fill();}}
+function grain(a){const d=x.getImageData(0,0,W,H);for(let i=0;i<d.data.length;i+=4){const n=(R()-.5)*a;d.data[i]+=n;d.data[i+1]+=n;d.data[i+2]+=n}x.putImageData(d,0,0)}
+const mode=location.hash.slice(1);
+if(mode==='cold-brew'){bokeh(['#120a05','#3a2210'],['#c98a3c','#8a4f1f','#f0b968','#5a3416'],70,40,170);
+ x.strokeStyle='#d9a35a55';x.lineWidth=3;for(let i=0;i<26;i++){x.beginPath();x.moveTo(W*.5,H*.28);x.lineTo(W*.5+Math.cos(i/26*6.28)*520,H*.28+Math.sin(i/26*6.28)*400);x.stroke()}}
+if(mode==='dark-chocolate'){x.fillStyle='#bdbdbd';x.fillRect(0,0,W,H);const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#cfcfcf');g.addColorStop(1,'#7e7e7e');x.fillStyle=g;x.fillRect(0,0,W,H);
+ const tw=330,th=300;for(let r=-1;r<4;r++)for(let q=-1;q<6;q++){const px=q*(tw+14)+(r%2?60:0)-30,py=r*(th+14)+10,rot=(R()-.5)*.1;x.save();x.translate(px+tw/2,py+th/2);x.rotate(rot);
+  x.fillStyle='#2e2420';x.fillRect(-tw/2,-th/2,tw,th);x.fillStyle='#4a3a33';x.beginPath();x.moveTo(-tw/2,-th/2);x.lineTo(tw/2,-th/2);x.lineTo(tw/2-70,-th/2+70);x.lineTo(-tw/2+70,-th/2+70);x.fill();
+  x.fillStyle='#1c1410';x.beginPath();x.moveTo(-tw/2,th/2);x.lineTo(tw/2,th/2);x.lineTo(tw/2-70,th/2-70);x.lineTo(-tw/2+70,th/2-70);x.fill();
+  x.fillStyle='#3a2d27';x.fillRect(-tw/2+70,-th/2+70,tw-140,th-140);x.restore()}}
+if(mode==='orange'){bokeh(['#8a2d00','#ff8a1f'],['#ffb347','#ff7a00','#c64a00','#ffd27a'],90,20,120);
+ for(let i=0;i<500;i++){x.fillStyle=`rgba(255,${180+R()*60|0},80,${.1+R()*.25})`;x.beginPath();x.arc(R()*W,R()*H,2+R()*6,0,7);x.fill()}}
+grain(26);document.title='done';</script></body></html>

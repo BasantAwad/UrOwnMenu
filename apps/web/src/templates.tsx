@@ -2062,7 +2062,7 @@ function IngredientStory({ snapshot }: TemplateProps) {
 
   if (entries.length === 0) {
     return (
-      <div className="tpl tpl-story">
+      <div className="tpl istory">
         <p className="story-empty">Nothing on the board yet.</p>
       </div>
     )
@@ -2074,7 +2074,7 @@ function IngredientStory({ snapshot }: TemplateProps) {
   }
 
   return (
-    <div className="tpl tpl-story">
+    <div className="tpl istory">
       <header className="story-mast">
         <div className="story-mast__lead">
           <span className="story-mast__eyebrow">

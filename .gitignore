@@ -42,3 +42,9 @@ sitecheck*/
 apps/web/src/assets/hero.png
 apps/api/shot-*.png
 apps/api/.dev.vars
+
+# Template harness output (regenerate with node scripts/harness.mjs assets)
+apps/web/public/harness/
+apps/web/shots/
+apps/web/dist-artifact/
+apps/web/vite.artifact.config.ts
