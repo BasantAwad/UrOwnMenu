@@ -286,7 +286,8 @@ Built and tested on this branch:
 - Tests, all passing in dry-run with no network:
   `verify-pipeline.mjs` (19 checks), `verify-analyst.mjs` (12),
   `verify-critic.mjs` (6), `verify-run-item.mjs` (11: use cases 4.1–4.8,
-  idempotency, licence refusal, fix bounds, 12-call budget, real MP4 clip).
+  idempotency, licence refusal, fix bounds, 12-call budget, per-attempt
+  provenance sidecars, real MP4 clip).
 - `apps/web/harness/layer-stage.html`: renders real pipeline output for the
   visual check (build spec 10.4) at 390, 820 and 1440.
 - `apps/web/src/ScrollScrub.tsx` and `scrub.css`: scroll-scrubbed video

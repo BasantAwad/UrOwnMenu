@@ -7,7 +7,7 @@
  * return value alone.
  */
 import assert from 'node:assert/strict'
-import { mkdir, readFile, rm, stat } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadConfig } from '../pipeline-runner/models.ts'
@@ -90,6 +90,7 @@ await check('4.1 strawberry yogurt bowl: done, owner hero, fix then pass', async
   const plan = await readJson(bowlDir, 'layers.desktop.json')
   plannedOrDropped(plan, brief)
   assert.ok(manifest.events.some((event) => event.stage === 'scout' && event.gate), 'gate results must be recorded')
+  assert.equal(manifest.spendUsd, 0, 'dry-run calls are free and must be recorded as 0')
 })
 
 // ---- 4.2 crispy fries ------------------------------------------------------
@@ -159,6 +160,12 @@ await check('4.7 mystery tart: needs-assets, no hero, generation budget spent', 
   assert.equal(await exists(path.join(result.dir, 'assets', 'hero.png')), false)
   const plan = await readJson(result.dir, 'layers.desktop.json')
   assert.equal(plan.layers.length, 0)
+  // Every generated candidate leaves provenance, including rejected ones.
+  const genFiles = (await readdir(path.join(result.dir, 'assets'))).filter((name) => /\.gen-\d+-\d+\.json$/.test(name))
+  assert.equal(genFiles.length, 12, `expected 12 generated-candidate sidecars, got ${genFiles.length}`)
+  const sample = await readJson(path.join(result.dir, 'assets'), genFiles[0])
+  assert.ok(sample.prompt.length > 0 && typeof sample.seed === 'number')
+  assert.equal(sample.rejected, true)
 })
 
 // ---- 4.8 homepage hero clip ----------------------------------------------

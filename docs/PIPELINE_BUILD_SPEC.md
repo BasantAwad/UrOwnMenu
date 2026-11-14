@@ -903,7 +903,10 @@ pipeline-out/
     assets/
       <layerId>.png
       <layerId>.meta.json
-      <layerId>.gen-<n>.json          (generated candidates only)
+      <layerId>.gen-<round>-<index>.json
+                             (every generated attempt: prompt, seed, model,
+                              licence, gate result, or reason "empty-matte"
+                              when it never reached the gate)
     cache/                 (keyed downloads and generations; see 9.3)
     scrub/
       raw.mp4

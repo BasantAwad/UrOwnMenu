@@ -29,6 +29,8 @@ export type ManifestData = {
   status: RunStatus
   events: ManifestEvent[]
   generationCalls: number
+  /** Model spend recorded by the runner's guard; 0 when calls are free/dry. */
+  spendUsd: number
   warnings: string[]
   needsDecision?: string
 }
@@ -48,6 +50,7 @@ export class Manifest {
       status: 'running',
       events: [],
       generationCalls: 0,
+      spendUsd: 0,
       warnings: [],
     }
   }

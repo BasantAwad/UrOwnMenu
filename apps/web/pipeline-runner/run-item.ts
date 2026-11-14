@@ -109,6 +109,7 @@ export async function runItem(item: DryItem, options: RunOptions): Promise<ItemR
     if (reason) manifest.stop(status, reason)
     else manifest.finish(status)
     manifest.data.generationCalls = budget.calls
+    manifest.data.spendUsd = guard.total
     await manifest.flush()
     return {
       itemId: item.id,
@@ -428,6 +429,21 @@ async function sourceLayer(layer: LayerWithId, ctx: SourceCtx): Promise<ChosenAs
           })
           if (matte.empty) {
             manifest.note({ stage: 'generate', layer: layer.id, round, seed: candidate.seed, result: 'empty-matte' })
+            // An empty matte is still a generated attempt, so record its
+            // provenance. This is how the owner can audit a generation spend
+            // that produced nothing usable.
+            await store.writeJson(`assets/${layer.id}.gen-${round}-${candidate.index}.json`, {
+              candidateId,
+              layer: layer.id,
+              round,
+              seed: candidate.seed,
+              prompt: candidate.prompt,
+              model: candidate.model,
+              modelLicence: candidate.modelLicence,
+              reason: 'empty-matte',
+              gate: null,
+              rejected: true,
+            })
             continue
           }
           const meta = measure(layer, matte.image, candidateId)
@@ -439,6 +455,18 @@ async function sourceLayer(layer: LayerWithId, ctx: SourceCtx): Promise<ChosenAs
             seed: candidate.seed,
             candidateId,
             gate,
+          })
+          // Provenance for a generated candidate, even when the gate rejects it.
+          await store.writeJson(`assets/${layer.id}.gen-${round}-${candidate.index}.json`, {
+            candidateId,
+            layer: layer.id,
+            round,
+            seed: candidate.seed,
+            prompt: candidate.prompt,
+            model: candidate.model,
+            modelLicence: candidate.modelLicence,
+            gate,
+            rejected: !gate.ok,
           })
           if (gate.ok) {
             const source = generatedSource(candidate, item.id)
