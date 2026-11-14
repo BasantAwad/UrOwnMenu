@@ -1,0 +1,309 @@
+/*
+ * Lazy Susan (orbital-menu). Every rule sits under .lazy so nothing leaks into
+ * the other templates. Colours come from the owner's tokens with fallbacks.
+ */
+.lazy {
+  --lz-ink: var(--ink, #1c1a16);
+  --lz-bg: var(--bg, #f4efe6);
+  --lz-accent: var(--accent, #9b3d2b);
+  --lz-display: var(--tpl-display, 'Fraunces', Georgia, 'Times New Roman', serif);
+  --lz-body: var(--tpl-body, 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif);
+  box-sizing: border-box;
+  min-height: 100svh;
+  padding-block: clamp(20px, 4vw, 52px);
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  background: var(--lz-bg);
+  color: var(--lz-ink);
+  font-family: var(--lz-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.lazy *,
+.lazy *::before,
+.lazy *::after {
+  box-sizing: border-box;
+}
+
+.lazy__empty {
+  margin: 0;
+  padding-block: 40vh;
+  text-align: center;
+  color: color-mix(in srgb, var(--lz-ink) 65%, transparent);
+}
+
+/* ---- header: venue and categories ---- */
+
+.lazy__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px 28px;
+  padding-bottom: clamp(16px, 2.4vw, 28px);
+  min-width: 0;
+}
+
+.lazy__venue {
+  margin: 0;
+  font-family: var(--lz-display);
+  font-variation-settings: 'SOFT' 100, 'WONK' 0;
+  font-weight: 500;
+  font-size: clamp(30px, 4.6vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.lazy__cats {
+  display: flex;
+  gap: 6px 22px;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+.lazy__cats::-webkit-scrollbar {
+  display: none;
+}
+
+.lazy__cat {
+  flex: none;
+  padding: 6px 0 5px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  color: color-mix(in srgb, var(--lz-ink) 58%, transparent);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 240ms ease, border-color 240ms ease;
+}
+.lazy__cat[aria-pressed='true'] {
+  color: var(--lz-ink);
+  border-bottom-color: var(--lz-accent);
+}
+.lazy__cat:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.lazy__cat:focus-visible {
+  outline: 2px solid var(--lz-accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* ---- the table ---- */
+
+.lazy__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 64px);
+  align-items: center;
+}
+
+.lazy__stage {
+  position: relative;
+  container-type: inline-size;
+  aspect-ratio: 1 / 0.9;
+  min-width: 0;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  outline: none;
+}
+.lazy__stage:active {
+  cursor: grabbing;
+}
+.lazy__stage:focus-visible {
+  outline: 2px solid var(--lz-accent);
+  outline-offset: 6px;
+  border-radius: 24px;
+}
+
+/* A warm pool of light from above the table, the one light source. */
+.lazy__glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    closest-side at 50% 56%,
+    color-mix(in srgb, var(--lz-accent) 24%, transparent),
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+/* The lacquered disc. Its rim is the only hard line on the page. */
+.lazy__disc {
+  position: absolute;
+  left: 8%;
+  top: 40%;
+  width: 84%;
+  height: 44%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 50% 38%,
+    color-mix(in srgb, var(--lz-ink) 9%, var(--lz-bg)) 0%,
+    color-mix(in srgb, var(--lz-ink) 20%, var(--lz-bg)) 60%,
+    color-mix(in srgb, var(--lz-ink) 32%, var(--lz-bg)) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--lz-accent) 50%, transparent),
+    inset 0 -16px 28px -14px rgba(0, 0, 0, 0.28),
+    0 30px 40px -22px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+/* Each dish stands on the disc: its bottom edge is the anchor point. */
+.lazy__dish {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  will-change: transform, opacity;
+}
+.lazy__dish::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -4%;
+  width: 86%;
+  height: 16%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.42), transparent);
+  z-index: -1;
+  pointer-events: none;
+}
+.lazy__dish:focus-visible {
+  outline: 2px solid var(--lz-accent);
+  outline-offset: 4px;
+  border-radius: 50%;
+}
+
+.lazy__photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.26));
+}
+.lazy__dish.is-front .lazy__photo {
+  filter: drop-shadow(0 16px 14px rgba(0, 0, 0, 0.36));
+}
+
+/* A photograph with its own background is framed as a medallion: a round
+   crop with its own rim and shadow, so it reads as a plate, not a box. */
+.lazy__dish.is-medallion .lazy__photo {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  border-radius: 50%;
+  object-fit: cover;
+  filter: none;
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--lz-bg) 88%, #fff),
+    0 0 0 7px color-mix(in srgb, var(--lz-ink) 14%, transparent),
+    0 18px 22px -12px rgba(0, 0, 0, 0.5);
+}
+.lazy__dish.is-medallion.is-front .lazy__photo {
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--lz-bg) 88%, #fff),
+    0 0 0 7px color-mix(in srgb, var(--lz-ink) 14%, transparent),
+    0 26px 30px -14px rgba(0, 0, 0, 0.55);
+}
+
+/* ---- the dish in focus ---- */
+
+.lazy__copy {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+.lazy__kicker {
+  margin: 0;
+  font-size: 15px;
+  color: color-mix(in srgb, var(--lz-ink) 60%, transparent);
+}
+
+.lazy__name {
+  margin: 0;
+  font-family: var(--lz-display);
+  font-variation-settings: 'SOFT' 100, 'WONK' 0;
+  font-weight: 500;
+  font-size: clamp(36px, 5.2vw, 68px);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.lazy__price {
+  margin: 0;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  color: var(--lz-accent);
+}
+
+.lazy__desc {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.lazy__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.lazy__btn {
+  padding: 10px 18px;
+  border: 1px solid color-mix(in srgb, var(--lz-ink) 28%, transparent);
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  color: inherit;
+  cursor: pointer;
+}
+.lazy__btn:hover {
+  border-color: var(--lz-accent);
+  color: var(--lz-accent);
+}
+.lazy__btn:focus-visible {
+  outline: 2px solid var(--lz-accent);
+  outline-offset: 3px;
+}
+
+/* ---- phones and small tablets: the table above, the dish below ---- */
+
+@media (max-width: 820px) {
+  .lazy__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lazy__stage {
+    aspect-ratio: 1 / 0.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lazy__cat {
+    transition: none;
+  }
+  .lazy__stage {
+    cursor: default;
+  }
+}

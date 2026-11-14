@@ -4,8 +4,7 @@ import { Magnetic } from '@animate-ui/react/primitives/effects/magnetic'
 
 // The 3D set piece is code-split: it pulls in three.js only when a template
 // that uses it is actually rendered, and only when WebGL is available.
-const PlateScene = React.lazy(() => import('./three/PlateScene'))
-import { MotionConfig, motion, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react'
+import { MotionConfig, motion, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react'
 import { Reveal, usePointerTilt } from './motion-primitives'
 import { PlatedPoster, hashString } from './design/generated'
 import { Art, IcedCoffee, LavaCake, OrangeJuice, RoundDishes, type Dish } from './design/dishes'
@@ -21,6 +20,7 @@ import {
 import { TabIndicator } from './motion-parts'
 import './templates.css'
 import './story.css'
+import './lazy-susan.css'
 
 export type TemplateProps = {
   snapshot: PublishedSnapshot
@@ -461,332 +461,252 @@ function EditorialShowcase({ snapshot }: TemplateProps) {
 
 // ============ 2. Orbital Menu ============
 
-type OrbitVariant = 'centered' | 'horizontal' | 'vertical'
-
 /**
- * "A rotating wheel/orbit suited to round dishes... Active image moves to a
- * focal area. Implement Orbital Menu with horizontal, vertical and centered
- * variants. Use actual ellipse geometry." - docs/INSPIRATION.md section 2
- *
- * Motion model, after the "Orbiting items" pattern (animata.design, MIT):
- * the ring rotates continuously 360 degrees in a circle; each dish chip
- * counter-rotates at the same rate so the food stays upright while it travels
- * in the orbit. The animation is the orbit itself, not a crossfade.
- *
- * The centered variant is a true circle and orbits continuously (paused on
- * hover/focus, and under prefers-reduced-motion). The horizontal and vertical
- * variants are ellipses; there the dishes travel ALONG the ellipse arc when
- * the selection changes, animated with a spring, which is the same circular
- * motion scaled to an ellipse.
- *
- * All dish photography sits on the plate/cutout itself. No caption text is
- * rendered on or over a photo; the caption lives below the stage.
+ * Lazy Susan: the shared table's turntable, seen from the side. The dishes
+ * stand on a lacquered disc in perspective. Drag the table, use the arrow
+ * keys, pick a dish, or choose a category; the table turns the short way and
+ * settles with an ease-out. Depth is real: the dish nearest the diner is the
+ * largest and sharpest, the far side is smaller, dimmer and softly out of
+ * focus. Colours come from the owner's palette tokens, so every palette works.
  */
-
-/** Dish chip that orbits on the ellipse. Owns the spring-driven position. */
-function ArcMarker({
-  rotation,
-  baseAngleDeg,
-  rxPct,
-  ryPct,
-  item,
-  index,
-  selected,
-  onSelect,
-}: {
-  rotation: ReturnType<typeof useSpring>
-  baseAngleDeg: number
-  rxPct: number
-  ryPct: number
-  item: MenuItem
-  index: number
-  selected: boolean
-  onSelect: (index: number) => void
-}) {
-  const left = useTransform(rotation, (r: number) => {
-    const a = ((baseAngleDeg + r) % 360) * (Math.PI / 180)
-    return 50 + Math.cos(a) * rxPct + '%'
-  })
-  const top = useTransform(rotation, (r: number) => {
-    const a = ((baseAngleDeg + r) % 360) * (Math.PI / 180)
-    return 50 + Math.sin(a) * ryPct + '%'
-  })
-
-  return (
-    <motion.button
-      type="button"
-      className={'tpl-orbital__chip' + (selected ? ' is-active' : '')}
-      style={{ left, top }}
-      onClick={() => onSelect(index)}
-      aria-pressed={selected}
-      aria-label={item.name}
-    >
-      {item.photo_url && (
-        <span className="tpl-orbital__chipInner">
-          <img
-            className={photoClass(item, 'tpl-orbital__chipPhoto')}
-            src={item.photo_url}
-            alt=""
-            aria-hidden="true"
-            loading="lazy"
-          />
-        </span>
-      )}
-    </motion.button>
-  )
-}
+const SPIN_RAD_PER_PX = 0.008
+const SPIN_MS = 560
 
 function OrbitalMenu({ snapshot }: TemplateProps) {
-  const items = React.useMemo(() => allItems(snapshot).slice(0, 10), [snapshot])
-  const [selectedIndex, setSelectedIndex] = React.useState(0)
-  const [variant, setVariant] = React.useState<OrbitVariant>('centered')
-  const dragStart = React.useRef<number | null>(null)
+  const items = React.useMemo(() => allItems(snapshot).slice(0, 12), [snapshot])
+  const categories = React.useMemo(
+    () => allCategories(snapshot).filter((c) => c.items.length > 0),
+    [snapshot],
+  )
+  const n = items.length
+  const step = n > 0 ? (Math.PI * 2) / n : 0
 
-  const active = items[selectedIndex]
+  const [angle, setAngle] = React.useState(0)
+  const angleRef = React.useRef(0)
+  const frame = React.useRef(0)
+  const drag = React.useRef<{ x: number; a: number; moved: boolean } | null>(null)
+  const suppressClick = React.useRef(false)
 
-  // Only mount the WebGL set piece when the device can actually render it and
-  // the user has not asked for reduced motion. Everyone else gets the
-  // photograph or the generated plate, which is the accessibility fallback.
-  const canUse3D = React.useMemo(() => {
-    if (typeof window === 'undefined') return false
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false
-    try {
-      const canvas = document.createElement('canvas')
-      return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'))
-    } catch {
-      return false
-    }
+  const reduced = React.useMemo(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    [],
+  )
+
+  const apply = React.useCallback((a: number) => {
+    angleRef.current = a
+    setAngle(a)
   }, [])
-  /*
-   * Arc-jump rotation for the ellipse variants. Selecting a dish springs the
-   * ring by the angular delta between the previous and new selection, so the
-   * dishes travel along the ellipse instead of swapping in place.
-   */
-  const arcRotation = useMotionValue(0)
-  const smoothArc = useSpring(arcRotation, { stiffness: 68, damping: 17, restDelta: 0.01 })
-  const arcRef = React.useRef(0)
 
-  const select = React.useCallback((index: number) => {
-    if (!items.length) return
-    const next = ((index % items.length) + items.length) % items.length
-    const step = 360 / items.length
-    // Shortest arc from current selection to the new one.
-    let delta = (next - selectedIndex) * step
-    delta = ((delta + 540) % 360) - 180
-    arcRef.current += delta
-    arcRotation.set(arcRef.current)
-    setSelectedIndex(next)
-  }, [items, selectedIndex, arcRotation])
+  const cancelSpin = () => {
+    if (frame.current) cancelAnimationFrame(frame.current)
+    frame.current = 0
+  }
 
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); select(selectedIndex + 1) }
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); select(selectedIndex - 1) }
+  // Which dish is at the front: the one whose angle is closest to zero.
+  const frontIndex = (a: number) => (n > 0 ? ((Math.round(-a / step) % n) + n) % n : 0)
+  const front = frontIndex(angle)
+
+  const spinTo = React.useCallback(
+    (target: number) => {
+      cancelSpin()
+      if (reduced) {
+        apply(target)
+        return
+      }
+      const from = angleRef.current
+      const t0 = performance.now()
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - t0) / SPIN_MS)
+        const eased = 1 - Math.pow(1 - t, 3)
+        apply(from + (target - from) * eased)
+        frame.current = t < 1 ? requestAnimationFrame(tick) : 0
+      }
+      frame.current = requestAnimationFrame(tick)
+    },
+    [apply, reduced],
+  )
+
+  /** Turn the table the short way so dish `index` reaches the front. */
+  const select = React.useCallback(
+    (index: number) => {
+      if (n === 0) return
+      const cur = angleRef.current
+      let delta = -index * step - cur
+      delta -= Math.PI * 2 * Math.round(delta / (Math.PI * 2))
+      spinTo(cur + delta)
+    },
+    [n, step, spinTo],
+  )
+
+  React.useEffect(() => () => cancelSpin(), [])
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return
+    cancelSpin()
+    drag.current = { x: e.clientX, a: angleRef.current, moved: false }
+    suppressClick.current = false
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current
+    if (!d) return
+    const dx = e.clientX - d.x
+    if (Math.abs(dx) > 4) {
+      d.moved = true
+      suppressClick.current = true
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [selectedIndex, select])
+    apply(d.a + dx * SPIN_RAD_PER_PX)
+  }
+  const onPointerUp = () => {
+    if (!drag.current) return
+    drag.current = null
+    select(frontIndex(angleRef.current))
+  }
 
-  const stepDeg = items.length ? 360 / items.length : 360
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault()
+      select((front + 1) % n)
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      select((front - 1 + n) % n)
+    } else if (e.key === 'Home') {
+      e.preventDefault()
+      select(0)
+    } else if (e.key === 'End') {
+      e.preventDefault()
+      select(n - 1)
+    }
+  }
+
+  if (n === 0) {
+    return (
+      <div className="tpl tpl-orbital lazy">
+        <p className="lazy__empty">No dishes on the table yet. Add a dish to start turning the table.</p>
+      </div>
+    )
+  }
+
+  const active = items[front]
+  const activeCategory = categories.find((c) => c.id === active.category_id)
+  const firstIndexOf = (categoryId: string) => items.findIndex((i) => i.category_id === categoryId)
 
   return (
-    <div className="tpl tpl-orbital">
-      <header className="tpl-orbital__head">
-        <div>
-          <p className="tpl-eyebrow">Orbital menu</p>
-          <h1 className="tpl-orbital__title">{snapshot.restaurant.name}</h1>
-        </div>
-        <div className="tpl-orbital__variants" role="group" aria-label="Orbit layout">
-          {(['centered', 'horizontal', 'vertical'] as OrbitVariant[]).map((v) => (
-            <button
-              type="button"
-              key={v}
-              className={'tpl-orbital__variant' + (variant === v ? ' is-active' : '')}
-              onClick={() => setVariant(v)}
-              aria-pressed={variant === v}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
+    <div className="tpl tpl-orbital lazy">
+      <header className="lazy__head">
+        <h1 className="lazy__venue">{snapshot.restaurant.name}</h1>
+        {categories.length > 1 ? (
+          <nav className="lazy__cats" aria-label="Categories">
+            {categories.map((c) => {
+              const idx = firstIndexOf(c.id)
+              const current = active.category_id === c.id
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="lazy__cat"
+                  aria-pressed={current}
+                  disabled={idx < 0}
+                  onClick={() => idx >= 0 && select(idx)}
+                >
+                  {c.name}
+                </button>
+              )
+            })}
+          </nav>
+        ) : null}
       </header>
 
-      <div className="tpl-orbital__layout">
-        <div className="tpl-orbital__main">
-          <div
-            className={'tpl-orbital__stage tpl-orbital__stage--' + variant}
-            onPointerDown={(e) => { dragStart.current = e.clientX }}
-            onPointerUp={(e) => {
-              if (dragStart.current === null) return
-              const delta = e.clientX - dragStart.current
-              dragStart.current = null
-              if (Math.abs(delta) > 24) select(selectedIndex + (delta < 0 ? 1 : -1))
-            }}
-            onPointerCancel={() => { dragStart.current = null }}
-            role="group"
-            aria-label="Dish orbit. Click a dish, drag, or use the arrow keys."
-          >
-            {/* The orbit path the dishes travel on. */}
-            <span className="tpl-orbital__ringPath" aria-hidden="true" />
-
-            {variant === 'centered' ? (
-              /*
-               * Continuous orbit, straight from the animata "Orbiting items"
-               * pattern: the ring turns 360 degrees forever, each chip
-               * counter-rotates so the dish stays upright, and the whole
-               * thing pauses on hover/focus. Transforms only, so the browser
-               * keeps it on the compositor.
-               */
-              <div className="tpl-orbital__orbitSpin">
-                {items.map((item, idx) => {
-                  const a = (idx / items.length) * Math.PI * 2 - Math.PI / 2
-                  const pos = {
-                    left: 50 + Math.cos(a) * 42 + '%',
-                    top: 50 + Math.sin(a) * 42 + '%',
-                  }
-                  return (
-                    <button
-                      type="button"
-                      key={item.id}
-                      className={'tpl-orbital__chip' + (idx === selectedIndex ? ' is-active' : '')}
-                      style={pos}
-                      onClick={() => setSelectedIndex(idx)}
-                      aria-pressed={idx === selectedIndex}
-                      aria-label={item.name}
-                    >
-                      {item.photo_url && (
-                        <span className="tpl-orbital__chipCounter">
-                          <img
-                            className={photoClass(item, 'tpl-orbital__chipPhoto')}
-                            src={item.photo_url}
-                            alt=""
-                            aria-hidden="true"
-                            loading="lazy"
-                          />
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            ) : (
-              /*
-               * Ellipse variants: the dishes ride the ellipse itself and
-               * spring along it when the selection changes.
-               */
-              items.map((item, idx) => {
-                const rxPct = variant === 'horizontal' ? 38 : 30
-                const ryPct = variant === 'horizontal' ? 30 : 38
-                return (
-                  <ArcMarker
-                    key={item.id}
-                    rotation={smoothArc}
-                    baseAngleDeg={idx * stepDeg - 90}
-                    rxPct={rxPct}
-                    ryPct={ryPct}
-                    item={item}
-                    index={idx}
-                    selected={idx === selectedIndex}
-                    onSelect={select}
-                  />
-                )
-              })
-            )}
-
-            {/* The focal dish: photography only, never text. */}
-            {active && (
-              <div className="tpl-orbital__focal">
-                {canUse3D ? (
-                  <React.Suspense
-                    fallback={
-                      active.photo_url ? (
-                        <motion.img
-                          key={active.id}
-                          src={active.photo_url}
-                          alt={active.name}
-                          className={photoClass(active, 'tpl-orbital__focalPhoto')}
-                          style={photoStyle(active)}
-                          {...photoSize(active)}
-                        />
-                      ) : (
-                        <GeneratedPlate item={active} className="tpl-orbital__focalPlate" />
-                      )
-                    }
-                  >
-                    <PlateScene
-                      key={active.id}
-                      textureUrl={active.photo_url ?? undefined}
-                      tint="var(--tpl-accent)"
-                      className="tpl-orbital__focal3d"
-                    />
-                  </React.Suspense>
-                ) : active.photo_url ? (
-                  <motion.img
-                    key={active.id}
-                    src={active.photo_url}
-                    alt={active.name}
-                    className={photoClass(active, 'tpl-orbital__focalPhoto')}
-                    style={photoStyle(active)}
-                    initial={{ opacity: 0, scale: 0.92, rotate: -4 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    transition={{ type: 'spring', stiffness: 210, damping: 22 }}
-                    {...photoSize(active)}
+      <div className="lazy__body">
+        <div
+          className="lazy__stage"
+          role="group"
+          tabIndex={0}
+          aria-roledescription="rotating menu"
+          aria-label="Dishes on the table. Drag the table, or use the arrow keys."
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          onKeyDown={onKeyDown}
+        >
+          <div className="lazy__glow" aria-hidden="true" />
+          <div className="lazy__disc" aria-hidden="true" />
+          {items.map((item, i) => {
+            const th = i * step + angle
+            const s = Math.sin(th)
+            const c = Math.cos(th)
+            const d = (1 + c) / 2
+            const style: React.CSSProperties = {
+              left: `${50 + 36 * s}%`,
+              top: `${60 + 19 * c}%`,
+              width: `${18 + 11 * d}%`,
+              zIndex: Math.round(d * 100),
+              opacity: 0.42 + 0.58 * d,
+              filter: d < 0.5 ? `blur(${((0.5 - d) * 2.2).toFixed(2)}px)` : undefined,
+            }
+            const isFront = i === front
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={
+                  'lazy__dish' +
+                  (isFront ? ' is-front' : '') +
+                  (item.photo_is_cutout || !item.photo_url ? ' is-cutout' : ' is-medallion')
+                }
+                style={style}
+                aria-label={item.name}
+                aria-current={isFront ? 'true' : undefined}
+                tabIndex={-1}
+                onClick={() => {
+                  if (suppressClick.current) return
+                  select(i)
+                }}
+              >
+                {item.photo_url ? (
+                  <img
+                    className={photoClass(item, 'lazy__photo')}
+                    src={item.photo_url}
+                    alt=""
+                    aria-hidden="true"
+                    loading={isFront ? 'eager' : 'lazy'}
+                    style={photoFrameStyle(item)}
                   />
                 ) : (
-                  <motion.div
-                    key={active.id}
-                    className="tpl-orbital__focalArt"
-                    initial={{ opacity: 0, scale: 0.92, rotate: -4 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    transition={{ type: 'spring', stiffness: 210, damping: 22 }}
-                  >
-                    <GeneratedPlate item={active} className="tpl-orbital__focalPlate" />
-                  </motion.div>
+                  <GeneratedPlate item={item} className="lazy__photo" />
                 )}
-              </div>
-            )}
-          </div>
-
-          {/* The caption lives below the photography, never on it. */}
-          <div className="tpl-orbital__caption">
-            {active && (
-              <>
-                <span className="tpl-orbital__focalCategory">{categoryOf(snapshot, active.id)}</span>
-                <h2 className="tpl-orbital__focalTitle">{active.name}</h2>
-                <span className="tpl-orbital__focalPrice">
-                  {formatPrice(active.price_minor, active.currency_code)}
-                </span>
-                {active.short_description && (
-                  <p className="tpl-orbital__focalDesc">{active.short_description}</p>
-                )}
-              </>
-            )}
-          </div>
+              </button>
+            )
+          })}
         </div>
 
-        <aside className="tpl-orbital__list">
-          <span className="tpl-label">All dishes</span>
-          <ul>
-            {items.map((item, idx) => (
-              <li key={item.id}>
-                <motion.button
-                  type="button"
-                  className={'tpl-orbital__listItem' + (idx === selectedIndex ? ' is-active' : '')}
-                  onClick={() => select(idx)}
-                  whileHover={{ x: 6 }}
-                  transition={snapTransition}
-                >
-                  <span className="tpl-orbital__listNum">{String(idx + 1).padStart(2, '0')}</span>
-                  <span className="tpl-orbital__listName">{item.name}</span>
-                  <span className="tpl-orbital__listPrice">
-                    {formatPrice(item.price_minor, item.currency_code)}
-                  </span>
-                </motion.button>
-              </li>
-            ))}
-          </ul>
-          <p className="tpl-orbital__hint">Click, drag or use the arrow keys.</p>
-        </aside>
+        <article className="lazy__copy" aria-live="polite">
+          {activeCategory ? <p className="lazy__kicker">{activeCategory.name}</p> : null}
+          <h2 className="lazy__name">{active.name}</h2>
+          {active.price_minor !== null ? (
+            <p className="lazy__price">{formatPrice(active.price_minor, active.currency_code)}</p>
+          ) : null}
+          {active.short_description || active.long_description ? (
+            <p className="lazy__desc">{active.short_description || active.long_description}</p>
+          ) : null}
+          {n > 1 ? (
+            <div className="lazy__controls">
+              <button
+                type="button"
+                className="lazy__btn"
+                onClick={() => select((front - 1 + n) % n)}
+              >
+                Previous dish
+              </button>
+              <button type="button" className="lazy__btn" onClick={() => select((front + 1) % n)}>
+                Next dish
+              </button>
+            </div>
+          ) : null}
+        </article>
       </div>
     </div>
   )
