@@ -1,0 +1,236 @@
+/*
+ * Mosaïque (mosaic). Scoped to .mo. A wall of tiles sized by each photograph's
+ * own shape, dense-packed. One shared tint prints every photo as one set.
+ * Typographic tiles set their name to fill the square (container units).
+ */
+.mo {
+  --mo-bg: var(--bg, #f3ede2);
+  --mo-ink: var(--ink, #1f1b16);
+  --mo-accent: var(--accent, #b5473a);
+  --mo-shadow: color-mix(in srgb, var(--mo-ink) 70%, #6b2a22);
+  --mo-display: var(--tpl-display, 'Fraunces', Georgia, 'Times New Roman', serif);
+  --mo-body: var(--tpl-body, 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif);
+  box-sizing: border-box;
+  min-height: 100svh;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  padding-block: clamp(18px, 3vw, 36px) clamp(48px, 6vw, 80px);
+  background: var(--mo-bg);
+  color: var(--mo-ink);
+  font-family: var(--mo-body);
+  -webkit-font-smoothing: antialiased;
+}
+.mo *,
+.mo *::before,
+.mo *::after {
+  box-sizing: border-box;
+}
+
+/* ---- rail ---- */
+
+.mo__rail {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px 16px;
+  max-width: 1400px;
+  margin: 0 auto clamp(14px, 2vw, 24px);
+}
+.mo__wordmark {
+  font-family: var(--mo-display);
+  font-variation-settings: 'SOFT' 50, 'WONK' 0;
+  font-weight: 600;
+  font-size: clamp(22px, 2.6vw, 30px);
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.mo__railMeta {
+  font-size: 14px;
+  color: color-mix(in srgb, var(--mo-ink) 66%, transparent);
+  overflow-wrap: anywhere;
+}
+
+/* ---- the wall ---- */
+
+.mo__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: clamp(120px, 15vw, 220px);
+  grid-auto-flow: dense;
+  gap: clamp(4px, 0.6vw, 8px);
+  max-width: 1400px;
+  margin-inline: auto;
+}
+.mo__tile {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  container-type: inline-size;
+  margin: 0;
+}
+.mo__tile--lead {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+.mo__tile--wide {
+  grid-column: span 2;
+}
+.mo__tile--tall {
+  grid-row: span 2;
+}
+
+.mo__tile--camel { background: #c28b5c; color: var(--mo-ink); }
+.mo__tile--maroon { background: #6d2331; color: #f6ecdc; }
+.mo__tile--red { background: #b5382c; color: #fbf1e3; }
+.mo__tile--cream { background: #efe5d1; color: var(--mo-ink); }
+
+/* Photograph: cropped to the tile around its focal point, graded once. */
+.mo__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.92) contrast(1.05);
+}
+/* A cutout keeps its transparency and sits whole on the ground colour. */
+.mo__photo.is-cutout {
+  object-fit: contain;
+  padding: 10%;
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.25));
+}
+/* One shared tint so every photograph is printed as one set. */
+.mo__tint {
+  position: absolute;
+  inset: 0;
+  background: var(--mo-shadow);
+  mix-blend-mode: multiply;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.mo__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 28px 14px 12px;
+  background: linear-gradient(to top, rgba(20, 12, 10, 0.72), transparent);
+  color: #fbf6ee;
+}
+.mo__name {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--mo-display);
+  font-variation-settings: 'SOFT' 50, 'WONK' 0;
+  font-weight: 600;
+  font-size: clamp(16px, 2vw, 22px);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.mo__price {
+  flex: none;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Typographic tile: the name fills the square. */
+.mo__type {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 8px;
+  padding: clamp(12px, 4cqi, 22px);
+}
+.mo__folio {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+.mo__typeName {
+  margin: 0;
+  align-self: center;
+  font-family: var(--mo-display);
+  font-variation-settings: 'SOFT' 100, 'WONK' 0;
+  font-weight: 700;
+  font-size: clamp(18px, 15cqi, 76px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.mo__typeBody {
+  margin: 0;
+  font-size: clamp(12px, 3.6cqi, 15px);
+  line-height: 1.45;
+  opacity: 0.85;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mo__typeFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+.mo__sig {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+}
+.mo__empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-block: 20vh;
+  text-align: center;
+}
+
+/* ---- visit ---- */
+
+.mo__visit {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  max-width: 1400px;
+  margin: clamp(32px, 5vw, 64px) auto 0;
+  padding-top: 18px;
+  border-top: 1.5px solid color-mix(in srgb, var(--mo-ink) 22%, transparent);
+}
+.mo__visitLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--mo-ink) 66%, transparent);
+}
+.mo__visitLine {
+  margin: 0;
+  font-family: var(--mo-display);
+  font-variation-settings: 'SOFT' 50, 'WONK' 0;
+  font-size: clamp(20px, 2.4vw, 28px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.mo__visitPhone {
+  font-weight: 600;
+  color: var(--mo-accent);
+}
+
+/* ---- phones: two columns, lead tile still leads ---- */
+
+@media (max-width: 640px) {
+  .mo__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: clamp(120px, 40vw, 190px);
+  }
+}

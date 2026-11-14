@@ -6,7 +6,6 @@ import { MotionConfig, motion, useReducedMotion, useScroll, useSpring, useTransf
 import { Reveal, usePointerTilt } from './motion-primitives'
 import { PlatedPoster, hashString } from './design/generated'
 import { Art, IcedCoffee, LavaCake, OrangeJuice, RoundDishes, type Dish } from './design/dishes'
-import { overlayClass } from './design/art-director'
 import type { PublishedSnapshot, MenuItem, TemplateKey } from './api'
 import './templates.css'
 import './story.css'
@@ -16,6 +15,7 @@ import './cover-story.css'
 import './riso-zine.css'
 import './long-table.css'
 import './pedestal.css'
+import './mosaic.css'
 
 export type TemplateProps = {
   snapshot: PublishedSnapshot
@@ -81,22 +81,6 @@ export function paletteVars(snapshot: PublishedSnapshot): Record<string, string>
     vars['--tpl-body'] = body
   }
   return vars
-}
-
-/**
- * Inline style for an item photo.
- *
- * The aspect ratio prevents layout shift, and the measured focal point
- * drives `object-position` so a cover crop keeps the subject in frame. A
- * cutout carries transparency, so it must not be drawn on an opaque fill or
- * it ends up inside a visible white box, and it must never be cropped.
- */
-function photoStyle(item: MenuItem): React.CSSProperties | undefined {
-  const style: React.CSSProperties = { ...photoFrameStyle(item) }
-  if (item.photo_width && item.photo_height && item.photo_height > 0) {
-    style.aspectRatio = item.photo_width + ' / ' + item.photo_height
-  }
-  return Object.keys(style).length > 0 ? style : undefined
 }
 
 /**
@@ -1045,107 +1029,102 @@ function CafePedestal({ snapshot }: TemplateProps) {
   )
 }
 
-// ============ 7. Mosaïque ============
+// ============ 7. Mosaïque (mosaic) ============
 
 /**
- * The AKME reference: a wall of square poster tiles in alternating warm
- * grounds - camel, maroon, deep red, cream - each carrying either the
- * restaurant's macro photography or a typographic plate with the dish
- * name, price and folio. Soft radial light sits behind every photo so
- * studio shots feel staged on seamless paper.
+ * Mosaïque: a wall of tiles whose shapes follow each photograph. A wide photo
+ * takes two columns, a tall one two rows, a square one a single cell, and the
+ * lead dish a 2x2 block. Crops are set from each photo's focal point so the
+ * subject survives the crop. A dish without a photo becomes a typographic tile
+ * whose name fills the square. One shared tint prints every tile as one set.
  */
-function Mosaic({ snapshot }: TemplateProps) {
-  const items = allItems(snapshot)
-  const tiles = items.slice(0, 9)
+type MosaicShape = 'lead' | 'wide' | 'tall' | 'square'
 
+function mosaicShape(item: MenuItem, index: number): MosaicShape {
+  if (!item.photo_url) return 'square'
+  if (index === 0) return 'lead'
+  // A cutout is composed to sit whole in a square, so it never stretches.
+  if (item.photo_is_cutout) return 'square'
+  const { width, height } = photoSize(item)
+  if (!width || !height) return 'square'
+  const ratio = width / height
+  if (ratio > 1.25) return 'wide'
+  if (ratio < 0.8) return 'tall'
+  return 'square'
+}
+
+function Mosaic({ snapshot }: TemplateProps) {
+  const tiles = allItems(snapshot).slice(0, 9)
   const grounds = ['camel', 'maroon', 'red', 'cream'] as const
   const rest = snapshot.restaurant
 
   return (
-    <div className="tpl tpl-mosaic">
-      <header className="tpl-mosaic__rail">
-        <span className="tpl-mosaic__wordmark">{rest.name}</span>
-        <span className="tpl-mosaic__railMeta">
+    <div className="tpl mo">
+      <header className="mo__rail">
+        <span className="mo__wordmark">{rest.name}</span>
+        <span className="mo__railMeta">
           {rest.address_text ?? 'Menu'}
           {rest.phone ? ' · ' + rest.phone : ''}
         </span>
       </header>
 
-      <div className="tpl-mosaic__grid" role="list">
+      <div className="mo__grid" role="list">
         {tiles.map((item, idx) => {
           const ground = grounds[idx % grounds.length]
-          const hasPhoto = Boolean(item.photo_url)
+          const shape = mosaicShape(item, idx)
           const featured = item.is_featured === 1
+          const desc = item.short_description || item.long_description
           return (
             <article
               key={item.id}
               role="listitem"
-              style={{ ['--i' as string]: idx } as React.CSSProperties}
-              className={
-                'tpl-mosaic__tile tpl-mosaic__tile--' + ground +
-                ' ' + overlayClass(item, 'tile') +
-                (featured ? ' is-featured' : '')
-              }
+              className={`mo__tile mo__tile--${shape} mo__tile--${ground}`}
             >
-              {hasPhoto ? (
+              {item.photo_url ? (
                 <>
-                  {item.photo_is_cutout && (
-                    <div className="tpl-mosaic__tileGlow" aria-hidden="true" />
-                  )}
                   <img
-                    src={item.photo_url ?? ''}
+                    src={item.photo_url}
                     alt={item.name}
-                    className={photoClass(item, 'tpl-mosaic__tilePhoto')}
-                    style={photoStyle(item)}
+                    className={photoClass(item, 'mo__photo')}
+                    style={photoFrameStyle(item)}
                     loading="lazy"
                     {...photoSize(item)}
                   />
-                  <div className="tpl-mosaic__tileBar">
-                    <div className="tpl-mosaic__tileBarCopy">
-                      <h2 className="tpl-mosaic__tileName">{item.name}</h2>
-                      {item.short_description && (
-                        <p className="tpl-mosaic__tileDesc">{item.short_description}</p>
-                      )}
-                    </div>
-                    <span className="tpl-mosaic__tilePrice">
+                  <span className="mo__tint" aria-hidden="true" />
+                  <div className="mo__caption">
+                    <h2 className="mo__name">{item.name}</h2>
+                    <span className="mo__price">
                       {formatPrice(item.price_minor, item.currency_code)}
                     </span>
                   </div>
                 </>
               ) : (
-                <div className="tpl-mosaic__tileType">
-                  <GeneratedPlate
-                    item={item}
-                    tone={ground === 'maroon' || ground === 'red' ? 'cream' : 'ink'}
-                    className="tpl-mosaic__tilePoster"
-                  />
-                  <span className="tpl-mosaic__folio">N°{String(idx + 1).padStart(2, '0')}</span>
-                  <h2 className="tpl-mosaic__tileTitle">{item.name}</h2>
-                  {item.short_description && (
-                    <p className="tpl-mosaic__tileBody">{item.short_description}</p>
-                  )}
-                  <span className="tpl-mosaic__tileFoot">
-                    <span className="tpl-mosaic__folioPrice">
+                <div className="mo__type">
+                  <span className="mo__folio">N°{String(idx + 1).padStart(2, '0')}</span>
+                  <h2 className="mo__typeName">{item.name}</h2>
+                  {desc && <p className="mo__typeBody">{desc}</p>}
+                  <span className="mo__typeFoot">
+                    <span className="mo__price">
                       {formatPrice(item.price_minor, item.currency_code)}
                     </span>
-                    {featured && <span className="tpl-mosaic__sig">Signature</span>}
+                    {featured && <span className="mo__sig">Signature</span>}
                   </span>
                 </div>
               )}
             </article>
           )
         })}
-        {tiles.length === 0 && (
-          <div className="tpl-mosaic__empty">Nothing on the board yet.</div>
-        )}
+        {tiles.length === 0 && <p className="mo__empty">Nothing on the board yet.</p>}
       </div>
 
-      <footer className="tpl-mosaic__visit">
-        <span className="tpl-label">Visit us</span>
-        <p className="tpl-mosaic__visitLine">
-          {rest.address_text ?? rest.description ?? rest.name}
-        </p>
-        {rest.phone && <a className="tpl-mosaic__visitPhone" href={'tel:' + rest.phone}>{rest.phone}</a>}
+      <footer className="mo__visit">
+        <span className="mo__visitLabel">Visit us</span>
+        <p className="mo__visitLine">{rest.address_text ?? rest.description ?? rest.name}</p>
+        {rest.phone && (
+          <a className="mo__visitPhone" href={'tel:' + rest.phone}>
+            {rest.phone}
+          </a>
+        )}
       </footer>
     </div>
   )
