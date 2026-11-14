@@ -44,6 +44,17 @@ const SPLASH_SCALE = 3.3
 const SHRINK_STEPS = [1, 0.85, 0.72, 0.6]
 
 /**
+ * On a portrait stage a layer that is 33% of the width is 59% of the height, so
+ * the desktop sizes overflow the copy zone. Cap the vertical footprint instead
+ * of special-casing each caller.
+ */
+function fitToStage(scale: number, aspect: number): number {
+  const maxVertical = 0.24 // fraction of stage height
+  const cap = maxVertical * 6 * aspect
+  return Math.min(scale, cap)
+}
+
+/**
  * Distance in stage-width units between two normalised points. Vertical
  * offsets are divided by the aspect ratio, so the result is the real distance.
  */
@@ -101,10 +112,15 @@ function placeAccents(
   const layers: Layer[] = []
   const dropped: LayerPlan['dropped'] = []
 
-  for (const a of accents) {
+  for (const [index, a] of accents.entries()) {
     // depth 1 = nearest to the viewer: largest, defocused, fastest parallax.
-    const depth = 0.05 + rand() * 0.9
-    const scale = lerp(0.4, 1.0, depth) * factor
+    // With four or more accents, the first one is deliberately near, so the
+    // set always has one soft foreground layer (build spec 4.6) instead of
+    // relying on the seed to produce one. The size range keeps the hero the
+    // largest sharp object (critic check 5): a near accent is at most ~0.6 of
+    // the hero's width.
+    const depth = accents.length >= 4 && index === 0 ? 0.82 + rand() * 0.13 : 0.05 + rand() * 0.9
+    const scale = fitToStage(lerp(0.28, 0.62, depth) * factor, stage.aspect)
     const spot = findSpot(scale / 6, stage, placed, focal, rand)
     if (!spot) {
       dropped.push({ assetId: a.id, reason: 'no clear space without covering the copy or another layer' })
@@ -142,12 +158,21 @@ export function planLayers(assets: AssetMeta[], stage: Stage, seed: number): Lay
   const splash = assets.find((a) => a.kind === 'splash' || a.kind === 'background')
   const accents = assets.filter((a) => a.kind === 'ingredient' || a.kind === 'accent')
 
-  // Focal point: the stage side that is away from the copy zone.
+  // Focal point: the free side of the stage. A copy zone that runs across the
+  // bottom (portrait stages) pushes the focal point into the upper half; a copy
+  // zone on one side pushes it to the other side.
+  const copyAtBottom = z.y > 0.5 && z.w > 0.6
   const copyOnLeft = z.x < 0.5
-  const focal: Focal = {
-    x: copyOnLeft ? 0.72 : 0.3,
-    y: 0.46 + (rand() - 0.5) * 0.04,
-  }
+  const focal: Focal = copyAtBottom
+    ? {
+        x: 0.5,
+        y: clamp(z.y * 0.58, 0.24, 0.4) + (rand() - 0.5) * 0.03,
+      }
+    : {
+        x: copyOnLeft ? 0.72 : 0.3,
+        y: 0.46 + (rand() - 0.5) * 0.04,
+      }
+  const heroScale = fitToStage(HERO_SCALE, stage.aspect)
 
   // 1. Back: splash or background covers the stage behind everything.
   if (splash) {
@@ -173,23 +198,30 @@ export function planLayers(assets: AssetMeta[], stage: Stage, seed: number): Lay
       kind: 'hero',
       x: focal.x,
       y: focal.y,
-      scale: HERO_SCALE,
+      scale: heroScale,
       rotation: (rand() - 0.5) * 8,
       depth: 0.55,
       blurPx: 0,
       parallax: 0.55,
       z: 10,
     })
-    startPlaced.push({ x: focal.x, y: focal.y, r: HERO_SCALE / 6 })
+    startPlaced.push({ x: focal.x, y: focal.y, r: heroScale / 6 })
   }
 
   // 3. Accents: try full size first; shrink the whole set together if needed.
   //    Keep the first attempt that drops nothing, otherwise the one that drops least.
   const seedBase = seed ^ 0x9e3779b9
   let chosen: PlaceAttempt | null = null
+  const hasNear = (attempt: PlaceAttempt) => attempt.layers.some((layer) => layer.depth > 0.75)
   for (let i = 0; i < SHRINK_STEPS.length; i++) {
     const attempt = placeAccents(accents, stage, focal, seedBase + i * 7919, startPlaced, SHRINK_STEPS[i])
-    if (!chosen || attempt.dropped.length < chosen.dropped.length) chosen = attempt
+    if (
+      !chosen ||
+      attempt.dropped.length < chosen.dropped.length ||
+      (attempt.dropped.length === chosen.dropped.length && hasNear(attempt) && !hasNear(chosen))
+    ) {
+      chosen = attempt
+    }
     if (attempt.dropped.length === 0) break
   }
   const accentsPlaced = chosen ? chosen.layers : []

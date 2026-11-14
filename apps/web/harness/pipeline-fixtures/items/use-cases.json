@@ -1,0 +1,56 @@
+[
+  {
+    "id": "item_0142",
+    "name": "Strawberry Yogurt Bowl",
+    "description": "Greek yogurt, fresh strawberries, granola",
+    "ingredients": ["Greek yogurt", "strawberries", "granola"],
+    "photoPath": "owner/item_0142.jpg",
+    "homepageHero": true,
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" },
+    "simulate": { "criticFirst": "fix" }
+  },
+  {
+    "id": "item_fries",
+    "name": "Crispy Fries",
+    "description": "Hand-cut potatoes, fried twice, sea salt",
+    "ingredients": ["potatoes", "sea salt", "vegetable oil"],
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" }
+  },
+  {
+    "id": "item_caesar",
+    "name": "Caesar Salad",
+    "description": "Romaine, parmesan, croutons, dressing",
+    "ingredients": ["romaine", "parmesan", "croutons", "caesar dressing"],
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" }
+  },
+  {
+    "id": "item_lemonade",
+    "name": "House Lemonade",
+    "description": "",
+    "ingredients": [],
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" }
+  },
+  {
+    "id": "item_owner",
+    "name": "Roast Chicken",
+    "description": "Whole chicken, lemon, thyme",
+    "ingredients": ["chicken", "lemon", "thyme"],
+    "photoPath": "owner/roast-chicken.jpg",
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" }
+  },
+  {
+    "id": "item_green",
+    "name": "Green Smoothie",
+    "description": "Spinach, mint, apple",
+    "ingredients": ["spinach", "mint"],
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" }
+  },
+  {
+    "id": "item_mystery",
+    "name": "Mystery Tart",
+    "description": "",
+    "ingredients": ["figs"],
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" },
+    "simulate": { "failEveryCandidate": true }
+  }
+]

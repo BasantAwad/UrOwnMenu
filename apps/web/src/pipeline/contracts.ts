@@ -81,3 +81,79 @@ export type LayerPlan = {
   /** Reasons the planner dropped an asset (overlap, no room). Empty when all placed. */
   dropped: { assetId: string; reason: string }[]
 }
+
+/** ------------------------------------------------------------------------ */
+/** Briefs and model outputs. Every one is validated by schemas.ts first.    */
+/** ------------------------------------------------------------------------ */
+
+export type LayerKind = 'hero' | 'splash' | 'accent'
+
+/** What one layer should show. Written by the Art Director, capped by code. */
+export type LayerBrief = {
+  kind: LayerKind
+  /** Must match an analysis ingredient for accents; free text for hero/splash. */
+  assetLabel: string
+  visual: string
+  negative: string
+  intentionalBlur: boolean
+}
+
+export type ArtBrief = {
+  layers: LayerBrief[]
+  /** One lighting sentence, copied into every generation prompt. */
+  lightSentence: string
+}
+
+export type CriticFinding = {
+  /** Must be a layer in the plan being reviewed. */
+  layerId: string
+  check: number
+  problem: string
+  action: 'fix' | 'regenerate'
+}
+
+export type CriticResult = {
+  verdict: 'pass' | 'fix' | 'regenerate'
+  checks: { n: number; ok: boolean; reason: string }[]
+  findings: CriticFinding[]
+}
+
+export type MotionDecision = {
+  clipPrompt: string
+  durationSeconds: number
+  endFrameDescription: string
+}
+
+/** Where a stored asset came from. Missing licence means rejected. */
+export type AssetSource = {
+  source: 'owner-photo' | 'openverse' | 'wikimedia' | 'generate'
+  sourceId: string
+  creator: string | null
+  licence: string | null
+  licenceUrl: string | null
+  sourceUrl: string | null
+  model?: string
+  modelLicence?: string
+  prompt?: string
+  seed?: number
+}
+
+/** One layer that passed the gate, ready for the Composer. */
+export type ChosenAsset = {
+  layer: LayerBrief
+  meta: AssetMeta
+  /** Absolute path to the stored transparent PNG. */
+  path: string
+  source: AssetSource
+}
+
+/** Sidecar written next to every stored asset. */
+export type AssetSidecar = {
+  id: string
+  kind: AssetKind
+  meta: AssetMeta
+  gate: GateResult
+  source: AssetSource
+  createdAt: string
+}
+

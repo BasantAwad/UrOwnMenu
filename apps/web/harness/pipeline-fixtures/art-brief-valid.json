@@ -1,0 +1,40 @@
+{
+  "layers": [
+    {
+      "kind": "hero",
+      "assetLabel": "strawberry yogurt",
+      "visual": "a single strawberry half and a spoonful of thick yogurt on a light wood surface, soft key light from upper left",
+      "negative": "no text, no logo, no hands, no second bowl, no packaging",
+      "intentionalBlur": false
+    },
+    {
+      "kind": "splash",
+      "assetLabel": "strawberry yogurt splash",
+      "visual": "a frozen liquid splash of pale pink yogurt, mid-motion, crown shape, against plain white",
+      "negative": "no text, no logo, no hands, no fruit, no packaging",
+      "intentionalBlur": false
+    },
+    {
+      "kind": "accent",
+      "assetLabel": "Greek yogurt",
+      "visual": "a spoonful of Greek yogurt floating mid-air, sharp focus",
+      "negative": "no text, no logo, no hands, no packaging",
+      "intentionalBlur": false
+    },
+    {
+      "kind": "accent",
+      "assetLabel": "strawberries",
+      "visual": "a single whole strawberry floating mid-air, slight tilt, sharp focus",
+      "negative": "no text, no logo, no hands, no packaging",
+      "intentionalBlur": false
+    },
+    {
+      "kind": "accent",
+      "assetLabel": "granola",
+      "visual": "a small cluster of granola floating mid-air, sharp focus",
+      "negative": "no text, no logo, no hands, no packaging",
+      "intentionalBlur": false
+    }
+  ],
+  "lightSentence": "soft key light from upper left, no hard shadow on background"
+}

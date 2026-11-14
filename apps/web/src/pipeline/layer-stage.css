@@ -1,0 +1,87 @@
+/**
+ * LayerStage styles (docs/PIPELINE_BUILD_SPEC.md section 11).
+ *
+ * Shadows are `drop-shadow()` on the image so they follow the cutout's matte;
+ * never `box-shadow`. Parallax is a single CSS variable written by the
+ * component from the scroll position, so scrolling never re-renders React.
+ */
+
+.layer-stage {
+  --parallax: 0;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  container-type: inline-size;
+  background:
+    radial-gradient(120% 90% at 70% 20%, #fbf7f0 0%, #f1e9dc 58%, #e6dac8 100%);
+  isolation: isolate;
+}
+
+.layer-stage__layer {
+  position: absolute;
+  display: block;
+  transform:
+    translate(-50%, -50%)
+    translateY(calc(var(--parallax, 0) * var(--layer-parallax, 0) * var(--parallax-travel, -60px)))
+    rotate(var(--layer-rotation, 0deg));
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.layer-stage__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 14px 24px rgb(34 24 14 / 0.18));
+}
+
+/* Foreground defocus, decided per layer by the planner. */
+.layer-stage__img.is-blurred {
+  filter: blur(var(--layer-blur, 0px)) drop-shadow(0 18px 28px rgb(34 24 14 / 0.16));
+}
+
+.layer-stage__copy {
+  position: absolute;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5em;
+  color: #221a12;
+  font-family: 'Instrument Sans', system-ui, sans-serif;
+}
+
+.layer-stage__copy > * {
+  margin: 0;
+}
+
+.layer-stage__eyebrow {
+  font-size: clamp(0.65rem, 1.5cqw, 0.8rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.layer-stage__title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(1.4rem, 5.2cqw, 3.4rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+}
+
+.layer-stage__ingredients {
+  font-size: clamp(0.75rem, 1.9cqw, 1.05rem);
+  line-height: 1.45;
+  opacity: 0.78;
+}
+
+/* Reduced motion: no parallax and no transform changes beyond centring. */
+@media (prefers-reduced-motion: reduce) {
+  .layer-stage__layer {
+    transform: translate(-50%, -50%) rotate(var(--layer-rotation, 0deg));
+    will-change: auto;
+  }
+}

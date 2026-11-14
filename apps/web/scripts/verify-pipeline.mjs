@@ -7,6 +7,9 @@
 import assert from 'node:assert/strict'
 import { planLayers, rng } from '../src/pipeline/planner.ts'
 import { gateAsset, measureAlpha } from '../src/pipeline/gate.ts'
+import { fnv1a32 } from '../src/pipeline/hash.ts'
+import { RULES } from '../src/pipeline/rules.ts'
+import { rank, titleRejected } from '../pipeline-runner/agents/scout.ts'
 
 let passed = 0
 const check = (name, fn) => {
@@ -138,6 +141,73 @@ check('measureAlpha: a checkerboard is sharper than a flat fill', () => {
   const flat = measureAlpha(solid(w, w, 120), w, w)
   const sharp = measureAlpha(checker, w, w)
   assert.ok(sharp.sharpness > flat.sharpness + 0.5, `${sharp.sharpness} vs ${flat.sharpness}`)
+})
+
+// ---- Pipeline build spec 10.1: hash, mobile planner, rules, rank -----------
+
+check('fnv1a32 matches the known FNV-1a values', () => {
+  assert.equal(fnv1a32(''), 0x811c9dc5)
+  assert.equal(fnv1a32('a'), 0xe40c292c)
+})
+
+check('mobile planner keeps the hero in the upper half and accents off the copy zone', () => {
+  const mobile = RULES.stages.mobile
+  const mobileAssets = [meta('hero', 'hero'), ...Array.from({ length: 4 }, (_, i) => meta('a' + i, 'accent'))]
+  const plan = planLayers(mobileAssets, mobile, 11)
+  const hero = plan.layers.find((layer) => layer.kind === 'hero')
+  assert.ok(hero, 'mobile plan must include the hero')
+  assert.ok(hero.y < 0.5, `hero centre y ${hero.y.toFixed(3)} must be in the upper half`)
+  for (const accent of plan.layers.filter((layer) => layer.kind === 'accent')) {
+    const z = mobile.copyZone
+    const inside = accent.x > z.x && accent.x < z.x + z.w && accent.y > z.y && accent.y < z.y + z.h
+    assert.equal(inside, false, `${accent.assetId} centre is in the mobile copy zone`)
+  }
+  const placedAccents = plan.layers.filter((layer) => layer.kind === 'accent').length
+  assert.ok(placedAccents >= 3, `expected at least 3 of 4 accents placed, got ${placedAccents}`)
+})
+
+check('gate thresholds are read from RULES, not private constants', () => {
+  const before = gateAsset(meta('x', 'ingredient', { alphaCoverage: 0.55 }))
+  assert.equal(before.ok, true)
+  const saved = RULES.alpha.fillsFrame
+  try {
+    RULES.alpha.fillsFrame = 0.5
+    const after = gateAsset(meta('x', 'ingredient', { alphaCoverage: 0.55 }))
+    assert.ok(after.reasons.includes('fills-frame'), 'a lower fillsFrame must change the result')
+  } finally {
+    RULES.alpha.fillsFrame = saved
+  }
+})
+
+check('scout rank prefers a large PNG CC0 and breaks ties by id', () => {
+  const base = {
+    source: 'openverse',
+    tags: [],
+    url: 'https://example.test/a.png',
+    licenceUrl: null,
+    creator: null,
+    sourceUrl: null,
+  }
+  const good = { ...base, id: 'b_good', title: 'strawberry', width: 1200, height: 1200, filetype: 'png', licence: 'cc0' }
+  const weak = { ...base, id: 'a_weak', title: 'strawberry', width: 500, height: 500, filetype: 'jpg', licence: 'cc-by-sa' }
+  assert.deepEqual(rank([weak, good]).map((candidate) => candidate.id), ['b_good', 'a_weak'])
+  const tieA = { ...good, id: 'a_tie' }
+  const tieB = { ...good, id: 'b_tie' }
+  assert.deepEqual(rank([tieB, tieA]).map((candidate) => candidate.id), ['a_tie', 'b_tie'])
+  assert.equal(titleRejected('Restaurant logo vector'), true)
+  assert.equal(titleRejected('Strawberry on white'), false)
+})
+
+check('four or more accents always include a deliberately defocused foreground layer', () => {
+  const four = [meta('hero', 'hero'), ...Array.from({ length: 4 }, (_, i) => meta('f' + i, 'accent'))]
+  for (const seed of [1, 7, 42]) {
+    const accents = planLayers(four, stage, seed).layers.filter((layer) => layer.kind === 'accent')
+    assert.ok(
+      accents.some((layer) => layer.blurPx > 0),
+      `seed ${seed}: expected one accent with blurPx > 0`,
+    )
+    assert.ok(accents.some((layer) => layer.depth > 0.75))
+  }
 })
 
 console.log(`\n${passed} checks passed${process.exitCode ? ' (with failures)' : ''}`)

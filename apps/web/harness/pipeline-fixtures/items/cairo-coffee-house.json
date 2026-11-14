@@ -1,0 +1,31 @@
+[
+  {
+    "id": "item_cairo_iced",
+    "name": "Iced Coffee",
+    "description": "Cold brew, milk, ice",
+    "ingredients": ["cold brew", "milk", "ice"],
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" }
+  },
+  {
+    "id": "item_cairo_lava",
+    "name": "Lava Cake",
+    "description": "Dark chocolate, butter, eggs",
+    "ingredients": ["dark chocolate", "butter", "eggs"],
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" }
+  },
+  {
+    "id": "item_cairo_orange",
+    "name": "Fresh Orange Juice",
+    "description": "Oranges, nothing else",
+    "ingredients": ["oranges"],
+    "photoPath": "owner/orange-juice.jpg",
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" }
+  },
+  {
+    "id": "item_cairo_bowl",
+    "name": "Strawberry Yogurt Bowl",
+    "description": "Greek yogurt, fresh strawberries, granola",
+    "ingredients": ["Greek yogurt", "strawberries", "granola"],
+    "venue": { "name": "Cairo Coffee House", "tone": "warm, neighbourhood" }
+  }
+]

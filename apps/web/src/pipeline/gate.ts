@@ -3,15 +3,13 @@
  * bytes, so the same checks run in the browser, in Node tests, and in the
  * Critic agent's pre-flight. A failed asset never reaches the layout planner.
  */
-import type { AssetKind, AssetMeta, GateReason, GateResult } from './contracts.ts'
+import type { AssetMeta, GateReason, GateResult } from './contracts.ts'
+import { RULES } from './rules.ts'
 
-const MIN_SHORT_EDGE: Record<AssetKind, number> = {
-  hero: 800,
-  ingredient: 400,
-  splash: 700,
-  accent: 300,
-  background: 800,
-}
+/**
+ * Thresholds come from RULES (docs/PIPELINE_BUILD_SPEC.md section 6). Nothing
+ * numeric lives here, so a change in rules.ts is the only way to change a gate.
+ */
 
 /**
  * Measure what the gate needs from an RGBA buffer: alpha coverage, whether the
@@ -69,13 +67,17 @@ export function gateAsset(meta: AssetMeta): GateResult {
   const reasons: GateReason[] = []
   const short = Math.min(meta.width, meta.height)
 
-  if (short < MIN_SHORT_EDGE[meta.kind]) reasons.push('too-small')
-  if (meta.alphaCoverage < 0.01) reasons.push('nothing-visible')
-  else if (meta.alphaCoverage > 0.92 && meta.kind !== 'background') reasons.push('no-cutout')
-  if (meta.alphaCoverage > 0.6 && meta.kind !== 'background') reasons.push('fills-frame')
+  if (short < RULES.minShortEdge[meta.kind]) reasons.push('too-small')
+  if (meta.alphaCoverage < RULES.alpha.nothingVisible) reasons.push('nothing-visible')
+  else if (meta.alphaCoverage > RULES.alpha.noCutout && meta.kind !== 'background') reasons.push('no-cutout')
+  if (meta.alphaCoverage > RULES.alpha.fillsFrame && meta.kind !== 'background') reasons.push('fills-frame')
   if (meta.touchesEdge && meta.kind !== 'background' && meta.kind !== 'splash') reasons.push('dirty-edge')
   // Deliberate motion blur is part of the look for accents; it is a defect for hero shots.
-  if (meta.sharpness < 0.15 && !meta.intentionalBlur && (meta.kind === 'hero' || meta.kind === 'ingredient')) {
+  if (
+    meta.sharpness < RULES.sharpnessMin &&
+    !meta.intentionalBlur &&
+    (meta.kind === 'hero' || meta.kind === 'ingredient')
+  ) {
     reasons.push('soft-focus')
   }
 

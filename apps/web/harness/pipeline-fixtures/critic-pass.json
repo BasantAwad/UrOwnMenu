@@ -1,0 +1,13 @@
+{
+  "verdict": "pass",
+  "checks": [
+    { "n": 1, "ok": true, "reason": "every layer reads as its ingredient" },
+    { "n": 2, "ok": true, "reason": "one light direction" },
+    { "n": 3, "ok": false, "reason": "no rectangular shadow or halo" },
+    { "n": 4, "ok": true, "reason": "copy stays readable" },
+    { "n": 5, "ok": true, "reason": "hero is the largest sharp object" },
+    { "n": 6, "ok": true, "reason": "nearer accents are larger" },
+    { "n": 7, "ok": true, "reason": "nothing is clipped" }
+  ],
+  "findings": []
+}

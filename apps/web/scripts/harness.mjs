@@ -65,14 +65,21 @@ async function assets() {
 
 async function shoot() {
   const template = args[1]
-  if (!template) throw new Error('usage: harness.mjs shoot <template-key> [--w N] [--h N] [--palette key] [--viewport-only]')
+  if (!template) throw new Error('usage: harness.mjs shoot <template-key|layer-stage> [--w N] [--h N] [--palette key] [--viewport-only]')
   const w = Number(flag('w', 1280))
   const h = Number(flag('h', 900))
   const palette = flag('palette', 'espresso-cream')
   const fullPage = !args.includes('--viewport-only')
   const outDir = path.join(WEB, 'shots')
   await mkdir(outDir, { recursive: true })
-  const file = flag('out', path.join(outDir, `${template}-${w}.png`))
+  const stage = flag('stage', 'desktop')
+  const item = flag('item', 'pipeline-out/verify-run/item_0142')
+  const isLayerStage = template === 'layer-stage'
+  const name = isLayerStage ? `${template}-${path.basename(item)}-${stage}-${w}.png` : `${template}-${stage}-${w}.png`
+  const file = flag('out', path.join(outDir, name))
+  const url = isLayerStage
+    ? `${BASE}/harness/layer-stage.html?item=${encodeURIComponent(item)}&stage=${stage}`
+    : `${BASE}/harness/index.html?t=${template}&p=${palette}`
 
   const browser = await launch()
   const page = await browser.newPage({ viewport: { width: w, height: h } })
@@ -82,7 +89,7 @@ async function shoot() {
   page.on('console', (m) => m.type() === 'error' && !/status of 4\d\d/.test(m.text()) && problems.push('console: ' + m.text()))
   page.on('requestfailed', (r) => problems.push('request failed: ' + r.url().slice(0, 90)))
 
-  await page.goto(`${BASE}/harness/index.html?t=${template}&p=${palette}`)
+  await page.goto(url)
   await page.waitForTimeout(1500)
 
   // Scroll through once so scroll-linked and lazy states resolve before the capture.
@@ -98,7 +105,7 @@ async function shoot() {
   await page.screenshot({ path: file, fullPage })
   await browser.close()
 
-  console.log(`${template} @${w}px  page height ${total}px  horizontal overflow ${overflow}px`)
+  console.log(`${template}${isLayerStage ? `/${stage}` : ''} @${w}px  page height ${total}px  horizontal overflow ${overflow}px`)
   console.log('screenshot:', file)
   if (overflow > 0) console.log('WARNING: page scrolls sideways by', overflow, 'px')
   if (problems.length) console.log('PROBLEMS:\n  ' + [...new Set(problems)].slice(0, 8).join('\n  '))

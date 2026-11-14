@@ -1,7 +1,8 @@
 # Visual pipeline: agents that understand a dish, make its imagery, and place it
 
-Status: part built, part specified. Read the "What is built" section before
-assuming anything runs end to end.
+Status: built and tested end to end in dry-run mode (no network, no model
+calls). Real model use is blocked on licence verification and endpoints; see
+section 8 for exactly what is done and what is not.
 
 ## What you asked for, and the answer to each part
 
@@ -267,24 +268,37 @@ twice for the same asset.
 
 ## 8. What is built, and what is not
 
-Built and tested in this branch:
-- `apps/web/src/pipeline/contracts.ts`: the data shapes every stage uses.
-- `apps/web/src/pipeline/gate.ts`: deterministic quality gate and alpha/sharpness measurement.
-- `apps/web/src/pipeline/planner.ts`: placement, depth, blur, parallax, shrink-to-fit, deterministic seeds.
-- `apps/web/scripts/verify-pipeline.mjs`: 13 checks, all passing. Run:
-  `node --experimental-strip-types scripts/verify-pipeline.mjs`
-- `apps/web/src/ScrollScrub.tsx` and `scrub.css`: scroll-scrubbed video component.
-- `apps/web/scripts/make-scrub-video.sh`: preparation for seeking.
+Built and tested on this branch:
+- `apps/web/src/pipeline/`: `contracts.ts`, `rules.ts` (every threshold and
+  word list), `hash.ts`, `gate.ts`, `planner.ts`, `schemas.ts` (model-output
+  validators), `cache.ts` (cache-key payloads), `LayerStage.tsx` and
+  `layer-stage.css` (the renderer from build spec section 11).
+- `apps/web/pipeline-runner/`: the orchestrator (`run-item.ts`), all seven
+  agents (Analyst, Art Director, Scout, Matter, Generator, Critic, Motion),
+  the licence gate (`models.ts` + `models.json`), the file cache and manifest
+  writer, pure-RGBA imaging (normalise, edge clean, stage composite), and
+  deterministic dry-run fixtures.
+- `apps/web/scripts/run-pipeline.mjs`: CLI. Dry run by default with
+  `--dry-run` or `PIPELINE_DRY_RUN=1`; writes `pipeline-out/<item>/`.
+- Tests, all passing in dry-run with no network:
+  `verify-pipeline.mjs` (18 checks), `verify-analyst.mjs` (12),
+  `verify-critic.mjs` (6), `verify-run-item.mjs` (10: use cases 4.1–4.8,
+  idempotency, fix bounds, 12-call budget, real MP4 scrub clip).
+- `apps/web/harness/layer-stage.html`: renders real pipeline output for the
+  visual check (build spec 10.4) at 390, 820 and 1440.
+- `apps/web/src/ScrollScrub.tsx` and `scrub.css`: scroll-scrubbed video
+  component; `scripts/make-scrub-video.sh` prepares the clip.
 - `apps/web/scripts/verify-scrub.mjs`: browser check (needs the dev server).
-- `apps/web/harness/scrub.html` and `scrub.tsx`: a page to test the component.
 
-Specified here, not built, because it needs model access this sandbox does not have:
-- The Analyst, Art Director and Critic model calls (their output contracts exist).
-- The Asset Scout's source searches and generation.
-- The Matter model call (the post-processing helpers exist: `normaliseCutout`, `cleanAlphaEdge`).
-- Orchestration: a runner that moves an item through the stages and caches each output.
+Not run yet, because it needs verified model licences and endpoints:
+- Every entry in `pipeline-runner/models.json` is `licence: "unverified"`,
+  `commercialOk: false`, `checkedOn: null`. The runner refuses a real
+  (non-dry) call until the owner reads each model card and fills those fields.
+- Consequently the real Cairo Coffee House run in the definition of done
+  (build spec section 14) is still outstanding, as is any cost figure.
 
-Suggested next step: build the orchestration runner and one real run on the
-Cairo Coffee House fixture (the one already in `apps/web/harness/fixture.ts`)
-on a machine with network access. Score the output with section 7 before
-tuning any prompt.
+Next step: verify the licences, set the endpoint env vars
+(`PIPELINE_LLM_URL`, `PIPELINE_GEN_URL`, `PIPELINE_MATTE_URL`,
+`PIPELINE_VIDEO_URL`), then run **one** Cairo item for real, check the
+manifest's events and spend, and only then the rest. Score with section 7
+before tuning any prompt.

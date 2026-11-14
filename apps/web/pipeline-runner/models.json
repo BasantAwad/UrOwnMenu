@@ -1,0 +1,45 @@
+{
+  "analyst": {
+    "id": "Qwen/Qwen2.5-7B-Instruct",
+    "licence": "unverified",
+    "commercialOk": false,
+    "checkedOn": null,
+    "notes": "Candidate only. Open the model card, copy the licence string, confirm commercial use, then set checkedOn."
+  },
+  "art-director": {
+    "id": "Qwen/Qwen2.5-7B-Instruct",
+    "licence": "unverified",
+    "commercialOk": false,
+    "checkedOn": null,
+    "notes": "Same entry as analyst until a separate brief model is chosen."
+  },
+  "critic": {
+    "id": "Qwen/Qwen2.5-VL-7B-Instruct",
+    "licence": "unverified",
+    "commercialOk": false,
+    "checkedOn": null,
+    "notes": "Must accept images. Candidate only; licence not read."
+  },
+  "generate": {
+    "id": "stabilityai/stable-diffusion-xl-base-1.0",
+    "licence": "unverified",
+    "commercialOk": false,
+    "checkedOn": null,
+    "steps": 28,
+    "notes": "Candidate only. SDXL-class needs its own licence check; schnell-class uses 4 steps."
+  },
+  "matting": {
+    "id": "onnx-community/ormbg-ONNX",
+    "licence": "unverified",
+    "commercialOk": false,
+    "checkedOn": null,
+    "notes": "Candidate only. Some popular matting models are non-commercial; read the card."
+  },
+  "video": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B",
+    "licence": "unverified",
+    "commercialOk": false,
+    "checkedOn": null,
+    "notes": "Homepage hero only. Candidate only; licence and hardware unverified."
+  }
+}

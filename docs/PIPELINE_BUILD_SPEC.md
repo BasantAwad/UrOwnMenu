@@ -1141,15 +1141,25 @@ continue the affected item when:
 
 ## 14. Definition of done
 
-- [ ] Sections 10.1 to 10.3 pass in dry-run mode, in CI.
-- [ ] Use cases 4.1 to 4.8 each produce their listed "Expected" files.
+- [x] Sections 10.1 to 10.3 pass in dry-run mode, in CI.
+      `verify-pipeline.mjs` 18, `verify-analyst.mjs` 12,
+      `verify-critic.mjs` 6, `verify-run-item.mjs` 10.
+- [x] Use cases 4.1 to 4.8 each produce their listed "Expected" files.
 - [ ] `models.ts` has a filled licence for every role used, with `checkedOn`.
-- [ ] No prompt in this document was changed without bumping its `promptVersion`.
+      Every entry is still `unverified` / `commercialOk: false` / `checkedOn:
+      null`, so real runs are refused on purpose.
+- [x] No prompt in this document was changed without bumping its `promptVersion`.
+      No prompt text was changed; the versions live next to each agent.
 - [ ] A real (non-dry) run on the Cairo Coffee House fixture completes for
       at least 3 items, and each manifest's `events` shows every call.
-- [ ] Visual check 10.4 passed for 4.1 and 4.6, with screenshots attached.
-- [ ] The renderer never displays an asset whose gate result is not `ok`.
-- [ ] `docs/PIPELINE.md` and this file are updated with anything that changed.
+- [x] Visual check 10.4 passed for 4.1 and 4.6, with screenshots attached:
+      `docs/pipeline-shots/item_0142-{desktop-1440,desktop-820,mobile-390}.jpg`
+      and `docs/pipeline-shots/item_green-…` (same three widths). Accents form a
+      loose cloud, near ones are larger and softer, none sit on the copy, the
+      splash sits behind.
+- [x] The renderer never displays an asset whose gate result is not `ok`
+      (`LayerStage.tsx` returns null; the harness reads each sidecar).
+- [x] `docs/PIPELINE.md` and this file are updated with anything that changed.
 
 ---
 
