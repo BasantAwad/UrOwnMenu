@@ -182,6 +182,29 @@ await check('running 4.1 twice produces byte-identical layer plans', async () =>
   assert.equal(a, b)
 })
 
+// ---- section 13: licence refusal before any model call --------------------
+await check('a real run stops with model-licence-unverified and calls no model', async () => {
+  const OUT3 = path.join(WEB, 'pipeline-out', 'verify-run-licence')
+  await rm(OUT3, { recursive: true, force: true })
+  const real = await loadConfig({ dryRun: false, outDir: OUT3 })
+  const unverified = Object.fromEntries(
+    Object.entries(real.models).map(([role, entry]) => [
+      role,
+      { ...entry, licence: 'unverified', commercialOk: false, checkedOn: null },
+    ]),
+  )
+  const result = await runItem(byId('item_fries'), {
+    config: { ...real, models: unverified },
+    baseDir: path.join(WEB, 'harness', 'pipeline-fixtures'),
+  })
+  assert.equal(result.status, 'needs-review')
+  assert.equal(result.reason, 'model-licence-unverified')
+  assert.equal(result.generationCalls, 0)
+  const manifest = await readJson(result.dir, 'manifest.json')
+  assert.equal(manifest.events.some((event) => event.stage === 'analyst'), false)
+  assert.ok(manifest.events.some((event) => event.stage === 'licence' && event.result === 'refused'))
+})
+
 // ---- section 5: fixes stay inside the written bounds -----------------------
 await check('applyFixes never moves x/y >0.05, scale >15% or blur >4px', async () => {
   const { applyFixes } = await import('../pipeline-runner/run-item.ts')

@@ -22,6 +22,7 @@ import { fnv1a32 } from '../src/pipeline/hash.ts'
 import { planLayers } from '../src/pipeline/planner.ts'
 import { capAccents, enforceSplash } from '../src/pipeline/schemas.ts'
 import type { PipelineConfig } from './models.ts'
+import { requireLicensed } from './models.ts'
 import type { DryItem } from './fixtures.ts'
 import { ItemStore, sha256, type RunStatus } from './store.ts'
 import { Cache } from './cache.ts'
@@ -116,6 +117,20 @@ export async function runItem(item: DryItem, options: RunOptions): Promise<ItemR
       dir: store.dir,
       generationCalls: budget.calls,
       warnings: manifest.data.warnings,
+    }
+  }
+
+  // Refuse a real run before any model call when a licence is unverified.
+  // This is the section-13 stop condition: the owner must confirm, not the runner.
+  if (!config.dryRun) {
+    const roles = ['analyst', 'art-director', 'critic', 'generate', 'matting'] as const
+    for (const role of [...roles, ...(item.homepageHero ? (['video'] as const) : [])]) {
+      try {
+        requireLicensed(config, role)
+      } catch (error) {
+        manifest.note({ stage: 'licence', role, result: 'refused', error: message(error) })
+        return finish('needs-review', 'model-licence-unverified')
+      }
     }
   }
 

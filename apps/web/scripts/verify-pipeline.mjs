@@ -10,6 +10,7 @@ import { gateAsset, measureAlpha } from '../src/pipeline/gate.ts'
 import { fnv1a32 } from '../src/pipeline/hash.ts'
 import { RULES } from '../src/pipeline/rules.ts'
 import { rank, titleRejected } from '../pipeline-runner/agents/scout.ts'
+import { requireLicensed } from '../pipeline-runner/models.ts'
 
 let passed = 0
 const check = (name, fn) => {
@@ -208,6 +209,13 @@ check('four or more accents always include a deliberately defocused foreground l
     )
     assert.ok(accents.some((layer) => layer.depth > 0.75))
   }
+})
+
+check('a real run refuses an unverified model licence before any call', () => {
+  const entry = { role: 'analyst', id: 'candidate', licence: 'unverified', commercialOk: false, checkedOn: null }
+  const config = { dryRun: false, models: { analyst: entry } }
+  assert.throws(() => requireLicensed(config, 'analyst'), /model-licence-unverified/)
+  assert.doesNotThrow(() => requireLicensed({ ...config, dryRun: true }, 'analyst'))
 })
 
 console.log(`\n${passed} checks passed${process.exitCode ? ' (with failures)' : ''}`)

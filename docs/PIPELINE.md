@@ -18,11 +18,14 @@ section 8 for exactly what is done and what is not.
 
 ## The honest limits (read these)
 
-- **This sandbox cannot reach Hugging Face, Openverse, Wikimedia or Wikipedia.**
-  I verified that with live requests. So no model was run and no image was
-  fetched while building this. The generation and sourcing stages are specified
-  and need to run on a machine with network access and, for generation, a GPU
-  (or a free hosted inference tier).
+- **No real model has been run while building this.** The environment had no
+  network access and no API keys, so every test runs in dry-run mode with
+  deterministic fixtures and procedural cutouts. The agents, validation,
+  caching, retries, manifest and post-processing are real and tested; the
+  endpoints are configured by environment variables
+  (`PIPELINE_LLM_URL`, `PIPELINE_GEN_URL`, `PIPELINE_MATTE_URL`,
+  `PIPELINE_VIDEO_URL`) and have not been exercised. A real run also needs a
+  host with network access and, for generation, a GPU or a free hosted tier.
 - **The attached images are someone else's stock.** Several look like
   watermarked or licensed stock photos. The pipeline must not scrape them, and
   they must not be committed to the repo unless you hold a licence that allows
@@ -281,9 +284,9 @@ Built and tested on this branch:
 - `apps/web/scripts/run-pipeline.mjs`: CLI. Dry run by default with
   `--dry-run` or `PIPELINE_DRY_RUN=1`; writes `pipeline-out/<item>/`.
 - Tests, all passing in dry-run with no network:
-  `verify-pipeline.mjs` (18 checks), `verify-analyst.mjs` (12),
-  `verify-critic.mjs` (6), `verify-run-item.mjs` (10: use cases 4.1–4.8,
-  idempotency, fix bounds, 12-call budget, real MP4 scrub clip).
+  `verify-pipeline.mjs` (19 checks), `verify-analyst.mjs` (12),
+  `verify-critic.mjs` (6), `verify-run-item.mjs` (11: use cases 4.1–4.8,
+  idempotency, licence refusal, fix bounds, 12-call budget, real MP4 clip).
 - `apps/web/harness/layer-stage.html`: renders real pipeline output for the
   visual check (build spec 10.4) at 390, 820 and 1440.
 - `apps/web/src/ScrollScrub.tsx` and `scrub.css`: scroll-scrubbed video

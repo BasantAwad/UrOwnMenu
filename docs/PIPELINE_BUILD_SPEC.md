@@ -1142,8 +1142,8 @@ continue the affected item when:
 ## 14. Definition of done
 
 - [x] Sections 10.1 to 10.3 pass in dry-run mode, in CI.
-      `verify-pipeline.mjs` 18, `verify-analyst.mjs` 12,
-      `verify-critic.mjs` 6, `verify-run-item.mjs` 10.
+      `verify-pipeline.mjs` 19, `verify-analyst.mjs` 12,
+      `verify-critic.mjs` 6, `verify-run-item.mjs` 11.
 - [x] Use cases 4.1 to 4.8 each produce their listed "Expected" files.
 - [ ] `models.ts` has a filled licence for every role used, with `checkedOn`.
       Every entry is still `unverified` / `commercialOk: false` / `checkedOn:
