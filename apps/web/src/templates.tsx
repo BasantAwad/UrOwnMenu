@@ -1,6 +1,4 @@
 import * as React from 'react'
-import { Blur } from '@animate-ui/react/primitives/effects/blur'
-import { Magnetic } from '@animate-ui/react/primitives/effects/magnetic'
 
 // The 3D set piece is code-split: it pulls in three.js only when a template
 // that uses it is actually rendered, and only when WebGL is available.
@@ -8,19 +6,18 @@ import { MotionConfig, motion, useReducedMotion, useScroll, useSpring, useTransf
 import { Reveal, usePointerTilt } from './motion-primitives'
 import { PlatedPoster, hashString } from './design/generated'
 import { Art, IcedCoffee, LavaCake, OrangeJuice, RoundDishes, type Dish } from './design/dishes'
-import { heroSplit, overlayClass, pickHero } from './design/art-director'
+import { overlayClass } from './design/art-director'
 import type { PublishedSnapshot, MenuItem, TemplateKey } from './api'
 import {
   focalTransition,
-  motionPresets,
   snapTransition,
-  staggerContainer,
 } from './motion'
 import { TabIndicator } from './motion-parts'
 import './templates.css'
 import './story.css'
 import './lazy-susan.css'
 import './apothecary.css'
+import './cover-story.css'
 
 export type TemplateProps = {
   snapshot: PublishedSnapshot
@@ -179,276 +176,78 @@ function formatPrice(minor: number | null, currency: string): string {
   return symbol + (minor / 100).toFixed(2)
 }
 
-// ============ 1. Editorial Showcase ============
+// ============ 1. Cover Story (editorial-showcase) ============
 
 /**
- * "Purposeful hero, restaurant identity, concise statement, clear Explore
- * Menu action, signature items, categories/full menu and optional
- * story/gallery/location. Menu must be reachable immediately; no long
- * decorative intro." - docs/INSPIRATION.md section 4
+ * Cover Story: the restaurant's name is the masthead, set at full ink; the
+ * hero dish is lifted in front of it, overlapping the letters, then the menu
+ * opens like the inside pages of a magazine: each course a section, each item
+ * a line with a dotted leader to its price.
  */
 function EditorialShowcase({ snapshot }: TemplateProps) {
-  const categories = allCategories(snapshot)
-  const items = allItems(snapshot)
-  const signature = items.filter((i) => i.is_featured)
-  // Lead with the strongest photograph, not simply menu order.
-  const hero = pickHero(signature.length > 0 ? signature : items)
-  const split = heroSplit(hero)
-  const [activeCategory, setActiveCategory] = React.useState(categories[0]?.id || '')
+  const courses = React.useMemo(
+    () => allCategories(snapshot).filter((c) => c.items.length > 0),
+    [snapshot],
+  )
+  const everything = React.useMemo(() => allItems(snapshot), [snapshot])
+  const cover = everything.find((i) => i.is_featured) ?? everything.find((i) => i.photo_url) ?? everything[0]
+  const standfirst = snapshot.restaurant.description
 
   return (
-    <div className="tpl tpl-editorial">
-      {/* --- Hero: type on ink, media beside it --- */}
-      <header
-        className="tpl-editorial__hero"
-        style={
-          {
-            '--hero-text': split.text,
-            '--hero-media': split.media,
-          } as React.CSSProperties
-        }
-      >
-        <motion.div
-          className="tpl-editorial__heroCopy"
-          variants={staggerContainer(0.08)}
-          initial="hidden"
-          animate="show"
-        >
-          <motion.p className="tpl-eyebrow" variants={motionPresets.rise}>
-            {snapshot.restaurant.address_text || 'Signature menu'}
-          </motion.p>
-          <Blur initialBlur={16} delay={120}>
-            <motion.h1 className="tpl-editorial__title" variants={motionPresets.rise}>
-              {snapshot.restaurant.name}
-            </motion.h1>
-          </Blur>
-          {snapshot.restaurant.description && (
-            <motion.p className="tpl-editorial__tagline" variants={motionPresets.rise}>
-              {snapshot.restaurant.description}
-            </motion.p>
-          )}
-          <motion.div className="tpl-editorial__heroActions" variants={motionPresets.rise}>
-            <Magnetic strength={0.4}>
-              <a href="#tpl-menu" className="tpl-editorial__cta">
-                Explore menu
-                <motion.span aria-hidden="true" whileHover={{ y: 4 }} transition={snapTransition}>
-                  ↓
-                </motion.span>
-              </a>
-            </Magnetic>
-          </motion.div>
-        </motion.div>
-
-        {hero && (
-          <motion.div
-            className={
-              'tpl-editorial__heroMedia' + (hero.photo_url ? '' : ' is-generated')
-            }
-            initial={{ opacity: 0, scale: 0.94 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 180, damping: 22, delay: 0.08 }}
-          >
-            <span className="tpl-editorial__heroGlow" aria-hidden="true" />
-            {hero.photo_url ? (
+    <div className="tpl tpl-editorial cover">
+      <section className="cover__hero" aria-label="Cover">
+        {standfirst ? <p className="cover__standfirst">{standfirst}</p> : <span />}
+        <h1 className="cover__mast">{snapshot.restaurant.name}</h1>
+        {cover ? (
+          <figure className="cover__dish">
+            {cover.photo_url ? (
               <img
-                src={hero.photo_url}
-                alt={hero.name}
-                className={photoClass(hero, 'tpl-editorial__heroImage')}
-                style={photoStyle(hero)}
-                {...photoSize(hero)}
+                className={photoClass(cover, 'cover__photo')}
+                src={cover.photo_url}
+                alt={cover.name}
+                style={photoFrameStyle(cover)}
               />
             ) : (
-              <GeneratedPlate
-                item={hero}
-                tone="cream"
-                className="tpl-editorial__heroImage tpl-editorial__heroPlate"
-              />
+              <GeneratedPlate item={cover} className="cover__photo" />
             )}
-          </motion.div>
-        )}
-      </header>
-
-      {/* --- Signature dishes --- */}
-      {signature.length > 0 && (
-        <section className="tpl-editorial__signature">
-          <div className="tpl-sectionHead">
-            <span className="tpl-sectionIndex">01</span>
-            <h2 className="tpl-sectionTitle">Signature dishes</h2>
-            <span className="tpl-sectionRule" aria-hidden="true" />
-          </div>
-          <motion.div
-            className="tpl-editorial__signatureRow"
-            variants={staggerContainer(0.09)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.25 }}
-          >
-            {signature.slice(0, 3).map((item) => (
-              <motion.article
-                key={item.id}
-                className="tpl-editorial__signatureItem tpl-sweep"
-                variants={motionPresets.rise}
-              >
-                <div
-                  className={
-                    'tpl-editorial__signatureMedia' + (item.photo_url ? '' : ' is-generated')
-                  }
-                >
-                  {item.photo_url ? (
-                    <motion.img
-                      src={item.photo_url}
-                      alt={item.name}
-                      className={photoClass(item)}
-                      style={photoStyle(item)}
-                      loading="lazy"
-                      whileHover={{ scale: 1.05 }}
-                      transition={snapTransition}
-                      {...photoSize(item)}
-                    />
-                  ) : (
-                    <GeneratedPlate item={item} className="tpl-editorial__signaturePlate" />
-                  )}
-                </div>
-                <div className="tpl-editorial__signatureCopy">
-                  <h3 className="tpl-editorial__signatureName">{item.name}</h3>
-                  {item.short_description && (
-                    <p className="tpl-editorial__signatureDesc">{item.short_description}</p>
-                  )}
-                  <span className="tpl-editorial__signaturePrice">
-                    {formatPrice(item.price_minor, item.currency_code)}
-                  </span>
-                </div>
-              </motion.article>
-            ))}
-          </motion.div>
-        </section>
-      )}
-
-      {/* --- Section rail (replaces the old orbital nav band) --- */}
-      {categories.length > 0 && (
-        <nav className="tpl-editorial__rail" aria-label="Menu sections">
-          <span className="tpl-editorial__railLabel">Sections</span>
-          <ul className="tpl-editorial__railList">
-            {categories.map((cat, i) => (
-              <li key={cat.id}>
-                <a
-                  href={'#cat-' + cat.id}
-                  className={
-                    'tpl-editorial__railLink' +
-                    (cat.id === activeCategory ? ' is-active' : '')
-                  }
-                  onClick={() => setActiveCategory(cat.id)}
-                >
-                  <span className="tpl-editorial__railIndex">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="tpl-editorial__railName">{cat.name}</span>
-                  <span className="tpl-editorial__railCount">{cat.items.length}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
-
-      {/* --- Full menu --- */}
-      <section id="tpl-menu" className="tpl-editorial__menu">
-        {categories.map((cat, idx) => (
-          <motion.article
-            key={cat.id}
-            id={'cat-' + cat.id}
-            className={'tpl-editorial__chapter' + (cat.id === activeCategory ? ' is-active' : '')}
-            variants={staggerContainer(0.06)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.15 }}
-          >
-            <motion.header className="tpl-editorial__chapterHead" variants={motionPresets.rise}>
-              <span className="tpl-editorial__chapterIndex">
-                {String(idx + 1).padStart(2, '0')}
-              </span>
-              <motion.h2 className="tpl-editorial__chapterTitle" variants={motionPresets.rise}>
-                {cat.name}
-              </motion.h2>
-              <span className="tpl-editorial__chapterCount">
-                {cat.items.length} {cat.items.length === 1 ? 'item' : 'items'}
-              </span>
-            </motion.header>
-
-            <ul className="tpl-editorial__items">
-              {cat.items.map((item) => (
-                <motion.li
-                  key={item.id}
-                  className={'tpl-editorial__item' + (item.is_available ? '' : ' is-hidden')}
-                  variants={motionPresets.rise}
-                  whileHover={{ x: 5 }}
-                  transition={snapTransition}
-                >
-                  {item.photo_url && (
-                    <div className="tpl-editorial__itemMedia">
-                      <img
-                        src={item.photo_url}
-                        alt={item.name}
-                        className={photoClass(item)}
-                        style={photoStyle(item)}
-                        loading="lazy"
-                        {...photoSize(item)}
-                      />
-                    </div>
-                  )}
-                  <div className="tpl-editorial__itemMain">
-                    <div className="tpl-editorial__itemHead">
-                      <span className="tpl-editorial__itemName">{item.name}</span>
-                      <span className="tpl-editorial__itemRule" aria-hidden="true" />
-                      <span className="tpl-editorial__itemPrice">
-                        {formatPrice(item.price_minor, item.currency_code)}
-                      </span>
-                    </div>
-                    {item.short_description && (
-                      <p className="tpl-editorial__itemDesc">{item.short_description}</p>
-                    )}
-                  </div>
-                </motion.li>
-              ))}
-            </ul>
-          </motion.article>
-        ))}
+          </figure>
+        ) : null}
+        {cover ? (
+          <p className="cover__caption">
+            <span className="cover__capName">{cover.name}</span>
+            {cover.price_minor !== null ? (
+              <span className="cover__capPrice">{formatPrice(cover.price_minor, cover.currency_code)}</span>
+            ) : null}
+          </p>
+        ) : null}
       </section>
 
-      {/* --- Visit --- */}
-      {(snapshot.restaurant.address_text || snapshot.restaurant.phone || snapshot.restaurant.email) && (
-        <section className="tpl-editorial__visit">
-          <div className="tpl-sectionHead">
-            <span className="tpl-sectionIndex">{String(signature.length > 0 ? 2 : 1).padStart(2, '0')}</span>
-            <h2 className="tpl-sectionTitle">Visit us</h2>
-            <span className="tpl-sectionRule" aria-hidden="true" />
-          </div>
-          <div className="tpl-editorial__visitGrid">
-            {snapshot.restaurant.address_text && (
-              <div className="tpl-editorial__visitCell">
-                <span className="tpl-label">Address</span>
-                <span className="tpl-editorial__visitValue">{snapshot.restaurant.address_text}</span>
-              </div>
-            )}
-            {snapshot.restaurant.phone && (
-              <div className="tpl-editorial__visitCell">
-                <span className="tpl-label">Phone</span>
-                <a className="tpl-editorial__visitValue" href={'tel:' + snapshot.restaurant.phone}>
-                  {snapshot.restaurant.phone}
-                </a>
-              </div>
-            )}
-            {snapshot.restaurant.email && (
-              <div className="tpl-editorial__visitCell">
-                <span className="tpl-label">Email</span>
-                <a className="tpl-editorial__visitValue" href={'mailto:' + snapshot.restaurant.email}>
-                  {snapshot.restaurant.email}
-                </a>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
+      <main className="cover__menu">
+        {courses.map((course) => (
+          <section key={course.id} className="cover__course" aria-labelledby={`course-${course.id}`}>
+            <h2 id={`course-${course.id}`} className="cover__courseName">
+              {course.name}
+            </h2>
+            <ul className="cover__items">
+              {course.items.map((item) => {
+                const desc = item.short_description || item.long_description
+                return (
+                  <li key={item.id} className="cover__item">
+                    <div className="cover__line">
+                      <span className="cover__itemName">{item.name}</span>
+                      <span className="cover__leader" aria-hidden="true" />
+                      {item.price_minor !== null ? (
+                        <span className="cover__itemPrice">{formatPrice(item.price_minor, item.currency_code)}</span>
+                      ) : null}
+                    </div>
+                    {desc ? <p className="cover__itemDesc">{desc}</p> : null}
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        ))}
+      </main>
     </div>
   )
 }
