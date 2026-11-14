@@ -15,6 +15,7 @@ import './apothecary.css'
 import './cover-story.css'
 import './riso-zine.css'
 import './long-table.css'
+import './pedestal.css'
 
 export type TemplateProps = {
   snapshot: PublishedSnapshot
@@ -862,19 +863,60 @@ function MenuMagazine({ snapshot }: TemplateProps) {
   )
 }
 
-// ============ 6. Café Pedestal ============
+// ============ 6. Café Pedestal (cafe) ============
 
 /**
- * A warm café landing built around the Drinko reference:
- *
- * - A plaster-sand hero pierced by the restaurant's name in huge white sans
- *   type, with the signature drink staged on a stone plinth breaking the line.
- * - A menu block with pill category tabs; the active category's items render
- *   as cream product cards (white photo inset on a cream body, price with a
- *   signature mark for featured items).
- * - A pastel promotion band at the bottom for the house hero, with its
- *   ingredient chips - never a fabricated discount line.
+ * Café Pedestal: every dish stands on its own plinth, a real object with a top
+ * face, a lit side and a floor shadow. Plinth height follows the price rank on
+ * its shelf, so the shelf has rhythm instead of a grid of equal boxes.
  */
+type PedestalTier = 0 | 1 | 2 | 3
+
+function pedestalTiers(items: MenuItem[]): Map<string, PedestalTier> {
+  const sorted = [...items].sort((a, b) => (a.price_minor ?? 0) - (b.price_minor ?? 0))
+  const tiers = new Map<string, PedestalTier>()
+  const n = sorted.length
+  sorted.forEach((item, rank) => {
+    const t = n <= 1 ? 2 : Math.min(3, Math.floor((rank / n) * 4))
+    tiers.set(item.id, t as PedestalTier)
+  })
+  return tiers
+}
+
+function PedestalPiece({
+  item,
+  tier,
+  size,
+  lazy,
+}: {
+  item: MenuItem
+  tier: PedestalTier
+  size: 'hero' | 'card' | 'promo'
+  lazy?: boolean
+}) {
+  return (
+    <div className={'pd__stand pd__stand--' + size} data-tier={tier}>
+      <div className="pd__object">
+        {item.photo_url ? (
+          <img
+            src={item.photo_url}
+            alt={item.name}
+            className={photoClass(item, 'pd__img')}
+            style={photoFrameStyle(item)}
+            loading={lazy ? 'lazy' : undefined}
+            {...photoSize(item)}
+          />
+        ) : (
+          <GeneratedPlate item={item} className="pd__img pd__plate" />
+        )}
+      </div>
+      <div className="pd__column" aria-hidden="true" />
+      <span className="pd__cap" aria-hidden="true" />
+      <span className="pd__floor" aria-hidden="true" />
+    </div>
+  )
+}
+
 function CafePedestal({ snapshot }: TemplateProps) {
   const categories = allCategories(snapshot)
   const items = allItems(snapshot)
@@ -887,72 +929,44 @@ function CafePedestal({ snapshot }: TemplateProps) {
   const activeCat = categories.find((c) => c.id === activeCategory) ?? firstCat
   const activeItems = activeCat?.items ?? []
   const visibleItems = showAll ? activeItems : activeItems.slice(0, 4)
+  const tiers = React.useMemo(() => pedestalTiers(activeItems), [activeItems])
   const heroWord = (firstCat?.name ?? 'menu').toUpperCase()
 
   return (
-    <div className="tpl tpl-cafe">
+    <div className="tpl tpl-cafe pd">
       {/* ---------- Hero ---------- */}
-      <header className="tpl-cafe__hero">
-        <div className="tpl-cafe__topRow">
-          <span className="tpl-cafe__wordmark">{snapshot.restaurant.name}</span>
-          <span className="tpl-cafe__topMeta">
-            {snapshot.restaurant.address_text ?? 'Menu'}
-          </span>
+      <header className="pd__hero">
+        <div className="pd__topRow">
+          <span className="pd__wordmark">{snapshot.restaurant.name}</span>
+          <span className="pd__topMeta">{snapshot.restaurant.address_text ?? 'Menu'}</span>
         </div>
 
-        <div className="tpl-cafe__heroRow">
-          <span className="tpl-cafe__heroWord tpl-cafe__heroWord--left">ORDER</span>
+        <div className="pd__heroRow">
+          <span className="pd__heroWord pd__heroWord--left">ORDER</span>
           {heroItem && (
-            <figure
-              className={
-                'tpl-cafe__heroMedia' + (heroItem.photo_is_cutout ? ' is-cutout' : '')
-              }
-            >
-              {heroItem.photo_is_cutout && (
-                <>
-                  <span className="tpl-cafe__steam tpl-cafe__steam--a" aria-hidden="true" />
-                  <span className="tpl-cafe__steam tpl-cafe__steam--b" aria-hidden="true" />
-                </>
-              )}
-              {heroItem.photo_url ? (
-                <img
-                  src={heroItem.photo_url}
-                  alt={heroItem.name}
-                  className={photoClass(heroItem, 'tpl-cafe__heroPhoto')}
-                  style={photoStyle(heroItem)}
-                  {...photoSize(heroItem)}
-                />
-              ) : (
-                <GeneratedPlate
-                  item={heroItem}
-                  className="tpl-cafe__heroPhoto tpl-cafe__heroPlate"
-                />
-              )}
+            <figure className="pd__heroFigure">
+              <PedestalPiece item={heroItem} tier={3} size="hero" />
             </figure>
           )}
-          <span className="tpl-cafe__heroWord tpl-cafe__heroWord--right">{heroWord}</span>
+          <span className="pd__heroWord pd__heroWord--right">{heroWord}</span>
         </div>
 
-        <p className="tpl-cafe__welcome">
-          {snapshot.restaurant.description ?? 'Welcome'}
-        </p>
-        <a className="tpl-cafe__cta" href="#cafe-menu">
+        <p className="pd__welcome">{snapshot.restaurant.description ?? 'Welcome'}</p>
+        <a className="pd__cta" href="#cafe-menu">
           See the menu
           <span aria-hidden="true"> ↓</span>
         </a>
       </header>
 
       {/* ---------- Menu ---------- */}
-      <section id="cafe-menu" className="tpl-cafe__menu" aria-label="Menu">
-        <div className="tpl-cafe__menuHead">
-          <h2 className="tpl-cafe__menuTitle">
-            Menu
-            <span className="tpl-cafe__script">{(activeCat?.name ?? 'drinks').toLowerCase()}</span>
-          </h2>
-        </div>
+      <section id="cafe-menu" className="pd__menu" aria-label="Menu">
+        <h2 className="pd__menuTitle">
+          Menu
+          <span className="pd__script">{(activeCat?.name ?? 'drinks').toLowerCase()}</span>
+        </h2>
 
         {categories.length > 0 && (
-          <div className="tpl-cafe__pills" role="tablist" aria-label="Menu sections">
+          <div className="pd__pills" role="tablist" aria-label="Menu sections">
             {categories.map((cat) => {
               const selected = cat.id === activeCategory
               return (
@@ -961,8 +975,11 @@ function CafePedestal({ snapshot }: TemplateProps) {
                   key={cat.id}
                   role="tab"
                   aria-selected={selected}
-                  className={'tpl-cafe__pill' + (selected ? ' is-active' : '')}
-                  onClick={() => { setActiveCategory(cat.id); setShowAll(false) }}
+                  className={'pd__pill' + (selected ? ' is-active' : '')}
+                  onClick={() => {
+                    setActiveCategory(cat.id)
+                    setShowAll(false)
+                  }}
                 >
                   {cat.name}
                 </button>
@@ -971,39 +988,20 @@ function CafePedestal({ snapshot }: TemplateProps) {
           </div>
         )}
 
-        <div className="tpl-cafe__grid">
+        <div className="pd__grid">
           {visibleItems.map((item) => (
-            <article key={item.id} className="tpl-cafe__card">
-              <div
-                className={
-                  'tpl-cafe__cardMedia' + (item.photo_url ? '' : ' is-generated')
-                }
-              >
-                {item.photo_url ? (
-                  <img
-                    src={item.photo_url}
-                    alt={item.name}
-                    className={photoClass(item, 'tpl-cafe__cardImg')}
-                    style={photoStyle(item)}
-                    loading="lazy"
-                    {...photoSize(item)}
-                  />
-                ) : (
-                  <GeneratedPlate item={item} className="tpl-cafe__cardPlate" />
-                )}
-                {item.is_featured === 1 && <span className="tpl-cafe__badge">Signature</span>}
+            <article key={item.id} className="pd__card">
+              <div className="pd__cardMedia">
+                <PedestalPiece item={item} tier={tiers.get(item.id) ?? 2} size="card" lazy />
+                {item.is_featured === 1 && <span className="pd__badge">Signature</span>}
               </div>
-              <div className="tpl-cafe__cardBody">
-                <h3 className="tpl-cafe__cardName">{item.name}</h3>
-                {item.short_description && (
-                  <p className="tpl-cafe__cardDesc">{item.short_description}</p>
-                )}
-                <div className="tpl-cafe__cardFoot">
-                  <span className="tpl-cafe__price">
-                    {formatPrice(item.price_minor, item.currency_code)}
-                  </span>
+              <div className="pd__cardBody">
+                <h3 className="pd__cardName">{item.name}</h3>
+                {item.short_description && <p className="pd__cardDesc">{item.short_description}</p>}
+                <div className="pd__cardFoot">
+                  <span className="pd__price">{formatPrice(item.price_minor, item.currency_code)}</span>
                   {item.dietary_labels && item.dietary_labels.length > 0 && (
-                    <span className="tpl-cafe__cardTags">{item.dietary_labels[0]}</span>
+                    <span className="pd__tag">{item.dietary_labels[0]}</span>
                   )}
                 </div>
               </div>
@@ -1012,8 +1010,8 @@ function CafePedestal({ snapshot }: TemplateProps) {
         </div>
 
         {activeItems.length > 4 && (
-          <div className="tpl-cafe__moreRow">
-            <button type="button" className="tpl-cafe__more" onClick={() => setShowAll((v) => !v)}>
+          <div className="pd__moreRow">
+            <button type="button" className="pd__more" onClick={() => setShowAll((v) => !v)}>
               {showAll ? 'Show less' : 'More'}
             </button>
           </div>
@@ -1022,39 +1020,24 @@ function CafePedestal({ snapshot }: TemplateProps) {
 
       {/* ---------- Promo band ---------- */}
       {heroItem && (
-        <section className="tpl-cafe__promo" aria-label="Signature">
-          <div className="tpl-cafe__promoCopy">
-            <span className="tpl-cafe__promoKicker">
-              <em>house</em> signature
-            </span>
-            <h2 className="tpl-cafe__promoTitle">{heroItem.name}</h2>
-            {heroItem.short_description && (
-              <p className="tpl-cafe__promoDesc">{heroItem.short_description}</p>
-            )}
+        <section className="pd__promo" aria-label="Signature">
+          <div className="pd__promoCopy">
+            <span className="pd__promoKicker">House signature</span>
+            <h2 className="pd__promoTitle">{heroItem.name}</h2>
+            {heroItem.short_description && <p className="pd__promoDesc">{heroItem.short_description}</p>}
             {heroItem.ingredients && heroItem.ingredients.length > 0 && (
-              <ul className="tpl-cafe__promoChips">
+              <ul className="pd__chips">
                 {heroItem.ingredients.slice(0, 4).map((ing) => (
                   <li key={ing}>{ing}</li>
                 ))}
               </ul>
             )}
-            <span className="tpl-cafe__promoPrice">
+            <span className="pd__price pd__price--promo">
               {formatPrice(heroItem.price_minor, heroItem.currency_code)}
             </span>
           </div>
-          <div className={'tpl-cafe__promoMedia' + (heroItem.photo_url ? '' : ' is-generated')}>
-            {heroItem.photo_url ? (
-              <img
-                src={heroItem.photo_url}
-                alt={heroItem.name}
-                className={photoClass(heroItem, 'tpl-cafe__promoPhoto')}
-                style={photoStyle(heroItem)}
-                loading="lazy"
-                {...photoSize(heroItem)}
-              />
-            ) : (
-              <GeneratedPlate item={heroItem} className="tpl-cafe__promoPlate" />
-            )}
+          <div className="pd__promoMedia">
+            <PedestalPiece item={heroItem} tier={3} size="promo" lazy />
           </div>
         </section>
       )}
