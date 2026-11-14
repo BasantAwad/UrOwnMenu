@@ -1,0 +1,303 @@
+/*
+ * Apothecary Cabinet (ingredient-universe). Scoped to .apo. Colours come from
+ * the owner's tokens; the paper label is always paper-coloured so it stays
+ * legible under every palette.
+ */
+.apo {
+  --ap-ink: var(--ink, #1c1a16);
+  --ap-bg: var(--bg, #f4efe6);
+  --ap-accent: var(--accent, #9b3d2b);
+  --ap-display: var(--tpl-display, 'Fraunces', Georgia, 'Times New Roman', serif);
+  --ap-body: var(--tpl-body, 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif);
+  --ap-wood: color-mix(in srgb, var(--ap-ink) 9%, var(--ap-bg));
+  box-sizing: border-box;
+  min-height: 100svh;
+  padding-block: clamp(24px, 4vw, 56px);
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  background: var(--ap-bg);
+  color: var(--ap-ink);
+  font-family: var(--ap-body);
+  -webkit-font-smoothing: antialiased;
+}
+.apo *,
+.apo *::before,
+.apo *::after {
+  box-sizing: border-box;
+}
+
+.apo__empty {
+  margin: 0;
+  padding-block: 30vh;
+  text-align: center;
+  color: color-mix(in srgb, var(--ap-ink) 65%, transparent);
+}
+
+/* ---- head ---- */
+
+.apo__head {
+  max-width: 62ch;
+  margin-inline: auto;
+  text-align: center;
+  padding-bottom: clamp(24px, 4vw, 44px);
+}
+.apo__title {
+  margin: 0;
+  font-family: var(--ap-display);
+  font-variation-settings: 'SOFT' 30, 'WONK' 1;
+  font-weight: 400;
+  font-size: clamp(36px, 6vw, 72px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.apo__lede {
+  margin: 14px 0 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--ap-ink) 72%, transparent);
+  text-wrap: pretty;
+}
+
+/* ---- the cabinet: a panel of shelves ---- */
+
+.apo__cabinet {
+  max-width: 1120px;
+  margin-inline: auto;
+  padding: clamp(18px, 3vw, 34px) clamp(14px, 2.6vw, 30px) clamp(10px, 2vw, 18px);
+  background: var(--ap-wood);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ap-ink) 14%, transparent),
+    inset 0 14px 30px -18px rgba(0, 0, 0, 0.35),
+    0 36px 60px -36px rgba(0, 0, 0, 0.5);
+  display: grid;
+  gap: clamp(26px, 4vw, 40px);
+  min-width: 0;
+}
+
+.apo__shelf {
+  min-width: 0;
+}
+
+.apo__shelfName {
+  margin: 0 0 6px;
+  font-family: var(--ap-display);
+  font-variation-settings: 'SOFT' 50, 'WONK' 0;
+  font-weight: 500;
+  font-size: 19px;
+  color: color-mix(in srgb, var(--ap-ink) 70%, transparent);
+}
+
+/* The shelf plane: a lit lip on top and a shadowed board beneath. */
+.apo__row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 22px 18px;
+  margin: 0;
+  padding: clamp(16px, 2.6vw, 26px) 10px 0;
+  list-style: none;
+  min-width: 0;
+}
+.apo__row::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -12px;
+  height: 14px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--ap-ink) 26%, var(--ap-bg)),
+    color-mix(in srgb, var(--ap-ink) 14%, var(--ap-bg))
+  );
+  border-top: 1px solid color-mix(in srgb, var(--ap-accent) 45%, transparent);
+  box-shadow: 0 14px 18px -10px rgba(0, 0, 0, 0.55);
+}
+
+.apo__slot {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* ---- the jar ---- */
+
+.apo__jar {
+  position: relative;
+  width: clamp(118px, 13vw, 156px);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.apo__jar:focus-visible {
+  outline: 2px solid var(--ap-accent);
+  outline-offset: 6px;
+  border-radius: 12px;
+}
+.apo__jar.is-lifted {
+  transform: translateY(-14px);
+}
+
+/* Glass body with a lid, a glint on the left and a soft base. */
+.apo__glass {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1.22;
+  border-radius: 14px 14px 22px 22px;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.34) 0%,
+      rgba(255, 255, 255, 0.05) 18%,
+      rgba(255, 255, 255, 0) 46%,
+      rgba(0, 0, 0, 0.12) 100%
+    ),
+    color-mix(in srgb, var(--ap-bg) 86%, var(--ap-ink) 6%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ap-ink) 16%, transparent),
+    inset 0 -18px 26px -16px rgba(0, 0, 0, 0.25),
+    0 12px 18px -12px rgba(0, 0, 0, 0.55);
+}
+.apo__glass::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 14%;
+  background: linear-gradient(to bottom, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 70%, #000));
+  z-index: 2;
+}
+
+/* The dish itself sits in the jar, a little below centre. */
+.apo__photo {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 78%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.3));
+  pointer-events: none;
+}
+.apo__glass > img.apo__photo:not(.is-cutout) {
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  transform: none;
+  object-fit: cover;
+  filter: none;
+  opacity: 0.92;
+}
+
+/* The paper label: always paper, so it stays readable on any palette. */
+.apo__label {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 14%;
+  z-index: 3;
+  padding: 6px 4px;
+  background: #efe6d2;
+  color: #1d1a16;
+  font-family: var(--ap-display);
+  font-variation-settings: 'SOFT' 0, 'WONK' 0;
+  font-size: 13px;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+}
+
+/* ---- the drawer: what is in the jar ---- */
+
+.apo__drawer {
+  max-width: 62ch;
+  margin: clamp(40px, 6vw, 64px) auto 0;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ap-ink) 18%, transparent);
+  padding-top: 24px;
+}
+.apo__drawerHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 20px;
+}
+.apo__name {
+  margin: 0;
+  font-family: var(--ap-display);
+  font-variation-settings: 'SOFT' 30, 'WONK' 0;
+  font-weight: 500;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.04;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.apo__price {
+  margin: 0;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ap-accent);
+}
+.apo__desc {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* Specimen cards: the owner's ingredients, each a small label on the drawer. */
+.apo__specimens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.apo__card {
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--ap-ink) 24%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ap-bg) 94%, var(--ap-ink) 4%);
+  font-size: 14px;
+  box-shadow: 0 6px 12px -8px rgba(0, 0, 0, 0.4);
+}
+.apo__specimens > li:nth-child(odd) {
+  transform: rotate(-0.8deg);
+}
+.apo__specimens > li:nth-child(even) {
+  transform: rotate(0.7deg);
+}
+
+/* ---- phones: smaller jars, the same shelves ---- */
+
+@media (max-width: 640px) {
+  .apo__jar {
+    width: clamp(96px, 30vw, 124px);
+  }
+  .apo__row {
+    gap: 18px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apo__jar {
+    transition: none;
+  }
+}

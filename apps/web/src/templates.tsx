@@ -11,7 +11,6 @@ import { Art, IcedCoffee, LavaCake, OrangeJuice, RoundDishes, type Dish } from '
 import { heroSplit, overlayClass, pickHero } from './design/art-director'
 import type { PublishedSnapshot, MenuItem, TemplateKey } from './api'
 import {
-  depthPlanes,
   focalTransition,
   motionPresets,
   snapTransition,
@@ -21,6 +20,7 @@ import { TabIndicator } from './motion-parts'
 import './templates.css'
 import './story.css'
 import './lazy-susan.css'
+import './apothecary.css'
 
 export type TemplateProps = {
   snapshot: PublishedSnapshot
@@ -50,12 +50,6 @@ export function allCategories(snapshot: PublishedSnapshot): Category[] {
   return out
 }
 
-function categoryOf(snapshot: PublishedSnapshot, itemId: string): string {
-  for (const cat of allCategories(snapshot)) {
-    if (cat.items.some((i) => i.id === itemId)) return cat.name
-  }
-  return ''
-}
 
 export function paletteVars(snapshot: PublishedSnapshot): Record<string, string> {
   const tokens = snapshot.brand?.theme_tokens || {}
@@ -721,183 +715,100 @@ function OrbitalMenu({ snapshot }: TemplateProps) {
  * Rotation/drag changes composition coherently. No random floating PNGs and
  * never infer ingredients from pixels." - docs/INSPIRATION.md section 3
  */
+/**
+ * Apothecary Cabinet: the menu is a wooden cabinet of shelves. Each category is
+ * one shelf; each dish is a jar on it, labelled with the dish name. Tapping a
+ * jar lifts it off the shelf and opens its drawer below: the price, the
+ * description, and the ingredients the owner listed, each as a specimen card.
+ * Ingredients come only from the owner's list; nothing is inferred.
+ */
 function IngredientUniverse({ snapshot }: TemplateProps) {
-  const items = allItems(snapshot)
-  const [activeId, setActiveId] = React.useState(items[0]?.id || '')
-  const [highlight, setHighlight] = React.useState<string | null>(null)
-  const [rotation, setRotation] = React.useState(0)
-  const dragStart = React.useRef<number | null>(null)
-  // Cursor-reactive pitch: a couple of degrees of rotateX so the stage
-  // feels physical, on top of the drag rotation on the same node.
-  const { bind: tiltBind, rotateX } = usePointerTilt(3.5)
+  const shelves = React.useMemo(
+    () => allCategories(snapshot).filter((c) => c.items.length > 0),
+    [snapshot],
+  )
+  const flat = React.useMemo(() => shelves.flatMap((s) => s.items), [shelves])
+  const [activeId, setActiveId] = React.useState<string>(flat[0]?.id ?? '')
+  const active = flat.find((i) => i.id === activeId) ?? flat[0]
+  const specimens = (active?.ingredients ?? []).slice(0, 6)
 
-  const active = items.find((i) => i.id === activeId) || items[0]
-
-  // Ingredients come from the owner's own data only. Never inferred.
-  const ingredients = React.useMemo(() => {
-    if (!active) return [] as string[]
-    const own = active.ingredients || []
-    if (own.length > 0) return own.slice(0, 3)
-    return [active.name]
-  }, [active])
+  if (flat.length === 0) {
+    return (
+      <div className="tpl tpl-ingredient apo">
+        <p className="apo__empty">No jars on the shelves yet. Add a dish to fill the cabinet.</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="tpl tpl-ingredient">
-      <header className="tpl-ingredient__head">
-        <p className="tpl-eyebrow">Ingredient universe</p>
-        <h1 className="tpl-ingredient__title">{snapshot.restaurant.name}</h1>
-        {snapshot.restaurant.description && (
-          <p className="tpl-ingredient__sub">{snapshot.restaurant.description}</p>
-        )}
+    <div className="tpl tpl-ingredient apo">
+      <header className="apo__head">
+        <h1 className="apo__title">{snapshot.restaurant.name}</h1>
+        {snapshot.restaurant.description ? (
+          <p className="apo__lede">{snapshot.restaurant.description}</p>
+        ) : null}
       </header>
 
-      {items.length > 1 && (
-        <nav className="tpl-ingredient__switcher" aria-label="Choose a dish">
-          {items.map((item) => (
-            <motion.button
-              type="button"
-              key={item.id}
-              className={'tpl-ingredient__switchBtn' + (item.id === active?.id ? ' is-active' : '')}
-              onClick={() => { setActiveId(item.id); setHighlight(null) }}
-              whileTap={{ scale: 0.96 }}
-              transition={snapTransition}
-              aria-pressed={item.id === active?.id}
-            >
-              {item.name}
-            </motion.button>
-          ))}
-        </nav>
-      )}
-
-      <div className="tpl-ingredient__scene" {...tiltBind}>
-        <motion.div
-          className="tpl-ingredient__stage"
-          animate={{ rotateY: rotation }}
-          style={{ rotateX, transformPerspective: 1100 }}
-          transition={focalTransition}
-          onPointerDown={(e) => { dragStart.current = e.clientX }}
-          onPointerUp={(e) => {
-            if (dragStart.current === null) return
-            const delta = e.clientX - dragStart.current
-            dragStart.current = null
-            if (Math.abs(delta) > 16) setRotation((r) => r + (delta < 0 ? 16 : -16))
-          }}
-          role="group"
-          aria-label="Ingredient composition. Drag to rotate."
-        >
-          <svg className="tpl-ingredient__wires" viewBox="0 0 800 520" aria-hidden="true" focusable="false">
-            {ingredients.map((ingredient, idx) => {
-              const targetX = idx === 0 ? 190 : idx === 1 ? 210 : 620
-              const targetY = idx === 0 ? 190 : idx === 1 ? 356 : 220
-              const isHot = highlight === ingredient
-              return (
-                <motion.line
-                  key={ingredient}
-                  x1="400"
-                  y1="260"
-                  x2={targetX}
-                  y2={targetY}
-                  stroke="currentColor"
-                  strokeWidth={isHot ? 1.6 : 1}
-                  initial={false}
-                  animate={{ opacity: isHot ? 0.9 : 0.3 }}
-                  transition={snapTransition}
-                />
-              )
-            })}
-          </svg>
-
-          {/* The hero stays the hero. */}
-          {active && (
-            <motion.div
-              className="tpl-ingredient__hero"
-              key={active.id}
-              initial={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
-              animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
-              transition={focalTransition}
-            >
-              <span className="tpl-ingredient__glow" aria-hidden="true" />
-              {active.photo_url ? (
-                <img
-                  src={active.photo_url}
-                  alt={active.name}
-                  className={photoClass(active, 'tpl-ingredient__heroPhoto')}
-                  style={photoStyle(active)}
-                  {...photoSize(active)}
-                />
-              ) : (
-                <span className="tpl-ingredient__heroInitial">
-                  {active.name.charAt(0).toUpperCase()}
-                </span>
-              )}
-              <span className="tpl-ingredient__heroShadow" aria-hidden="true" />
-            </motion.div>
-          )}
-
-          {/* Ingredient planes at deliberate depths. */}
-          {ingredients.map((ingredient, idx) => {
-            const plane = depthPlanes[idx % depthPlanes.length]
-            const isHot = highlight === ingredient
-            return (
-              <motion.button
-                type="button"
-                key={ingredient}
-                className={
-                  'tpl-ingredient__plane tpl-ingredient__plane--' + plane.key +
-                  (isHot ? ' is-highlighted' : '')
-                }
-                initial={{ opacity: 0, y: 26 }}
-                animate={{
-                  opacity: isHot ? 1 : plane.opacity,
-                  y: 0,
-                  scale: isHot ? plane.scale * 1.12 : plane.scale,
-                  z: plane.z,
-                }}
-                transition={{ ...focalTransition, delay: idx * 0.07 }}
-                onClick={() => setHighlight(isHot ? null : ingredient)}
-                aria-pressed={isHot}
-              >
-                <span className="tpl-ingredient__planeLabel">{ingredient}</span>
-              </motion.button>
-            )
-          })}
-        </motion.div>
+      <div className="apo__cabinet">
+        {shelves.map((shelf) => (
+          <section key={shelf.id} className="apo__shelf" aria-label={shelf.name}>
+            <h2 className="apo__shelfName">{shelf.name}</h2>
+            <ul className="apo__row" role="list">
+              {shelf.items.map((item) => {
+                const on = item.id === active?.id
+                return (
+                  <li key={item.id} className="apo__slot">
+                    <button
+                      type="button"
+                      className={'apo__jar' + (on ? ' is-lifted' : '')}
+                      aria-pressed={on}
+                      onClick={() => setActiveId(item.id)}
+                    >
+                      <span className="apo__glass" aria-hidden="true">
+                        {item.photo_url ? (
+                          <img
+                            className={photoClass(item, 'apo__photo')}
+                            src={item.photo_url}
+                            alt=""
+                            loading="lazy"
+                            style={photoFrameStyle(item)}
+                          />
+                        ) : (
+                          <GeneratedPlate item={item} className="apo__photo" />
+                        )}
+                      </span>
+                      <span className="apo__label">{item.name}</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        ))}
       </div>
 
-      <motion.div
-        className="tpl-ingredient__meta"
-        key={active?.id}
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={focalTransition}
-      >
-        {active && (
-          <>
-            <span className="tpl-label">{categoryOf(snapshot, active.id)}</span>
-            <h2 className="tpl-ingredient__metaTitle">{active.name}</h2>
-            <p className="tpl-ingredient__metaPrice">
-              {formatPrice(active.price_minor, active.currency_code)}
-            </p>
-            {active.short_description && <p>{active.short_description}</p>}
-            {active.ingredients && active.ingredients.length > 0 && (
-              <ul className="tpl-ingredient__metaList">
-                {active.ingredients.map((ing) => (
-                  <li
-                    key={ing}
-                    className={highlight === ing ? 'is-highlighted' : ''}
-                    onClick={() => setHighlight(highlight === ing ? null : ing)}
-                  >
-                    {ing}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {active.allergens && active.allergens.length > 0 && (
-              <p className="tpl-ingredient__allergens">Contains: {active.allergens.join(', ')}</p>
-            )}
-          </>
-        )}
-      </motion.div>
+      {active ? (
+        <article className="apo__drawer" aria-live="polite">
+          <div className="apo__drawerHead">
+            <h3 className="apo__name">{active.name}</h3>
+            {active.price_minor !== null ? (
+              <p className="apo__price">{formatPrice(active.price_minor, active.currency_code)}</p>
+            ) : null}
+          </div>
+          {active.short_description || active.long_description ? (
+            <p className="apo__desc">{active.short_description || active.long_description}</p>
+          ) : null}
+          {specimens.length > 0 ? (
+            <ul className="apo__specimens" aria-label="Ingredients">
+              {specimens.map((s) => (
+                <li key={s} className="apo__card">
+                  {s}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </article>
+      ) : null}
     </div>
   )
 }
