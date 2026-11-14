@@ -1,0 +1,303 @@
+/*
+ * Riso Zine (magazine). Scoped to .zine. Two inks plus paper: the accent is
+ * ink A, the ink colour is ink B, the background is the paper. Photos are
+ * printed as a duotone with a halftone screen. Colours come from the owner's
+ * tokens.
+ */
+.zine {
+  --zn-paper: var(--bg, #f4efe6);
+  --zn-a: var(--accent, #e4572e);
+  --zn-b: var(--ink, #1e3a8a);
+  --zn-display: var(--tpl-display, 'Fraunces', Georgia, 'Times New Roman', serif);
+  --zn-body: var(--tpl-body, 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif);
+  box-sizing: border-box;
+  min-height: 100svh;
+  padding-block: clamp(20px, 4vw, 48px);
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  background: var(--zn-paper);
+  color: var(--zn-b);
+  font-family: var(--zn-body);
+  -webkit-font-smoothing: antialiased;
+}
+.zine *,
+.zine *::before,
+.zine *::after {
+  box-sizing: border-box;
+}
+
+.zine__empty {
+  margin: 0;
+  padding-block: 30vh;
+  text-align: center;
+}
+
+/* ---- masthead and index ---- */
+
+.zine__masthead {
+  display: grid;
+  gap: 14px;
+  padding-bottom: clamp(18px, 3vw, 30px);
+  min-width: 0;
+}
+.zine__title {
+  margin: 0;
+  font-family: var(--zn-display);
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-weight: 800;
+  font-size: clamp(44px, 9vw, 124px);
+  line-height: 0.88;
+  letter-spacing: -0.035em;
+  color: var(--zn-a);
+  /* Misregistration: the second ink lands a hair off the first. */
+  text-shadow: 3px -2px 0 color-mix(in srgb, var(--zn-b) 45%, transparent);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.zine__index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+.zine__tab {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--zn-b);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: transparent;
+  text-underline-offset: 6px;
+  transition: text-decoration-color 200ms ease;
+}
+.zine__tab[aria-current='true'] {
+  text-decoration-color: var(--zn-a);
+}
+.zine__tab:focus-visible {
+  outline: 2px solid var(--zn-a);
+  outline-offset: 4px;
+}
+
+/* ---- the spread ---- */
+
+.zine__spread {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 74svh;
+  background: var(--zn-paper);
+  border: 2px solid var(--zn-b);
+  box-shadow: 10px 10px 0 -2px color-mix(in srgb, var(--zn-b) 20%, transparent);
+  animation: zine-turn 620ms cubic-bezier(0.3, 0.7, 0.2, 1) both;
+  transform-origin: left center;
+  touch-action: pan-y;
+}
+/* The fold: a soft gutter shadow down the middle of the spread. */
+.zine__spread::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 56px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in srgb, var(--zn-b) 16%, transparent) 50%,
+    transparent
+  );
+  pointer-events: none;
+}
+.zine__spread[data-dir='prev'] {
+  animation-name: zine-turn-back;
+  transform-origin: right center;
+}
+
+.zine__page {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  padding: clamp(20px, 3vw, 40px);
+}
+
+/* Left page: the halftone duotone photograph. */
+.zine__page--photo {
+  overflow: hidden;
+  border-right: 2px solid var(--zn-b);
+  background: var(--zn-paper);
+}
+.zine__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.35) brightness(1.04);
+  mix-blend-mode: multiply;
+}
+.zine__photo:not(img) {
+  min-height: 320px;
+}
+.zine__tint {
+  position: absolute;
+  inset: 0;
+  background: var(--zn-a);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+/* The halftone screen printed over the photograph. */
+.zine__dots {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, var(--zn-b) 28%, transparent 31%) 0 0 / 7px 7px;
+  opacity: 0.32;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* Right page: the list, printed in the second ink. */
+.zine__page--text {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+.zine__section {
+  margin: 0;
+  font-family: var(--zn-display);
+  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  font-weight: 800;
+  font-size: clamp(40px, 5.6vw, 84px);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  color: var(--zn-a);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.zine__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+}
+.zine__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 16px;
+  padding-block: 16px;
+  border-top: 2px solid var(--zn-b);
+}
+.zine__item:last-child {
+  border-bottom: 2px solid var(--zn-b);
+}
+.zine__name {
+  min-width: 0;
+  font-size: clamp(20px, 2vw, 24px);
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.zine__price {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--zn-a);
+  text-shadow: 1px 1px 0 color-mix(in srgb, var(--zn-b) 30%, transparent);
+}
+.zine__desc {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ---- turning the page ---- */
+
+.zine__turn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+}
+.zine__count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.zine__btn {
+  padding: 10px 18px;
+  border: 2px solid var(--zn-b);
+  border-radius: 0;
+  background: var(--zn-paper);
+  font: inherit;
+  font-weight: 700;
+  color: var(--zn-b);
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+.zine__btn:hover:not(:disabled) {
+  background: var(--zn-a);
+  border-color: var(--zn-a);
+  color: var(--zn-paper);
+}
+.zine__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.zine__btn:focus-visible {
+  outline: 2px solid var(--zn-a);
+  outline-offset: 3px;
+}
+
+@keyframes zine-turn {
+  from {
+    transform: perspective(1400px) rotateY(-16deg);
+    opacity: 0.25;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes zine-turn-back {
+  from {
+    transform: perspective(1400px) rotateY(16deg);
+    opacity: 0.25;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* ---- phones: one page at a time, photo above text ---- */
+
+@media (max-width: 760px) {
+  .zine__spread {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+  .zine__page--photo {
+    border-right: 0;
+    border-bottom: 2px solid var(--zn-b);
+    aspect-ratio: 4 / 5;
+  }
+  .zine__spread::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zine__spread,
+  .zine__spread[data-dir='prev'] {
+    animation: none;
+  }
+  .zine__btn,
+  .zine__tab {
+    transition: none;
+  }
+}

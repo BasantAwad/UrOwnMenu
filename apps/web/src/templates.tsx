@@ -8,16 +8,13 @@ import { PlatedPoster, hashString } from './design/generated'
 import { Art, IcedCoffee, LavaCake, OrangeJuice, RoundDishes, type Dish } from './design/dishes'
 import { overlayClass } from './design/art-director'
 import type { PublishedSnapshot, MenuItem, TemplateKey } from './api'
-import {
-  focalTransition,
-  snapTransition,
-} from './motion'
-import { TabIndicator } from './motion-parts'
 import './templates.css'
 import './story.css'
 import './lazy-susan.css'
 import './apothecary.css'
 import './cover-story.css'
+import './riso-zine.css'
+import './long-table.css'
 
 export type TemplateProps = {
   snapshot: PublishedSnapshot
@@ -612,139 +609,97 @@ function IngredientUniverse({ snapshot }: TemplateProps) {
   )
 }
 
-// ============ 4. Endless Table ============
+// ============ 4. Long Table (endless-table) ============
 
 /**
- * "Native vertical scroll through editorial item sections with alternating
- * image/text alignment, variable scale and category chapters. Active category
- * indicator; compact scan/list mode. Never hijack scroll."
- * - docs/INSPIRATION.md section 5
+ * Long Table: the menu is a table laid for a family meal, seen from above. Each
+ * course has a folded place card; its dishes sit on white plates along the cloth,
+ * alternating sides, each set a little off straight by a seed taken from the
+ * dish id, so the arrangement is the same every visit. The napkin beside each
+ * plate carries the owner's name, description and price.
  */
+function tableSeed(s: string): number {
+  let h = 2166136261
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
 function EndlessTable({ snapshot }: TemplateProps) {
-  const categories = allCategories(snapshot)
-  const [activeCategory, setActiveCategory] = React.useState(categories[0]?.id || '')
-  const [compact, setCompact] = React.useState(false)
+  const courses = React.useMemo(
+    () => allCategories(snapshot).filter((c) => c.items.length > 0),
+    [snapshot],
+  )
 
-  React.useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-        if (visible) {
-          const categoryId = (visible.target as HTMLElement).dataset.categoryId
-          if (categoryId) setActiveCategory(categoryId)
-        }
-      },
-      { rootMargin: '-45% 0px -45% 0px', threshold: [0, 0.25, 0.6] },
+  if (courses.length === 0) {
+    return (
+      <div className="tpl tpl-endless table">
+        <p className="table__empty">The table is bare. Add a dish to lay the first place.</p>
+      </div>
     )
-    const nodes = document.querySelectorAll('.tpl-endless__chapter')
-    nodes.forEach((n) => observer.observe(n))
-    return () => observer.disconnect()
-  }, [snapshot])
-
-  // A running index so the image/text alternation continues across chapters.
-  let rowIndex = 0
+  }
 
   return (
-    <div className="tpl tpl-endless">
-      <nav className="tpl-endless__jump" aria-label="Menu sections">
-        <ul>
-          {categories.map((cat, idx) => (
-            <li key={cat.id} className={cat.id === activeCategory ? 'is-active' : ''}>
-              <a href={'#chapter-' + cat.id}>
-                <span className="tpl-endless__jumpNum">{String(idx + 1).padStart(2, '0')}</span>
-                {cat.name}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <motion.button
-          type="button"
-          className="tpl-endless__mode"
-          onClick={() => setCompact((c) => !c)}
-          whileTap={{ scale: 0.96 }}
-          transition={snapTransition}
-          aria-pressed={compact}
-        >
-          {compact ? 'Editorial view' : 'Compact list'}
-        </motion.button>
-      </nav>
+    <div className="tpl tpl-endless table">
+      <header className="table__head">
+        <h1 className="table__title">{snapshot.restaurant.name}</h1>
+        {snapshot.restaurant.description ? (
+          <p className="table__lede">{snapshot.restaurant.description}</p>
+        ) : null}
+      </header>
 
-      {categories.map((cat, catIdx) => (
-        <section
-          key={cat.id}
-          id={'chapter-' + cat.id}
-          data-category-id={cat.id}
-          className={'tpl-endless__chapter' + (compact ? ' is-compact' : '')}
-        >
-          <motion.header
-            className="tpl-endless__chapterHead"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.6 }}
-            transition={focalTransition}
-          >
-            <span className="tpl-endless__chapterNum">{String(catIdx + 1).padStart(2, '0')}</span>
-            <h2 className="tpl-endless__chapterTitle">{cat.name}</h2>
-            <span className="tpl-endless__chapterRule" aria-hidden="true" />
-          </motion.header>
+      <div className="table__cloth">
+        {courses.map((course) => (
+          <section key={course.id} className="table__course" aria-labelledby={`table-${course.id}`}>
+            <div className="table__card">
+              <h2 id={`table-${course.id}`} className="table__courseName">
+                {course.name}
+              </h2>
+            </div>
 
-          <div className="tpl-endless__rows">
-            {cat.items.map((item) => {
-              const flip = rowIndex % 2 === 1
-              rowIndex += 1
-              const featured = item.is_featured === 1
-              return (
-                <motion.article
-                  key={item.id}
-                  className={
-                    'tpl-endless__row' +
-                    (flip ? ' tpl-endless__row--flip' : '') +
-                    (featured ? ' tpl-endless__row--featured' : '')
-                  }
-                  initial={{ opacity: 0, y: 34 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.25 }}
-                  transition={focalTransition}
-                >
-                  <div className={'tpl-endless__media' + (item.photo_url ? '' : ' is-generated')}>
-                    {item.photo_url ? (
-                      <motion.img
-                        src={item.photo_url}
-                        alt={item.name}
-                        className={photoClass(item)}
-                        style={photoStyle(item)}
-                        loading="lazy"
-                        whileHover={{ scale: 1.035 }}
-                        transition={snapTransition}
-                        {...photoSize(item)}
-                      />
-                    ) : (
-                      <GeneratedPlate item={item} className="tpl-endless__plate" />
-                    )}
-                  </div>
-                  <div className="tpl-endless__body">
-                    {featured && <span className="tpl-label tpl-label--accent">Signature</span>}
-                    <h3 className="tpl-endless__name">{item.name}</h3>
-                    {item.short_description && (
-                      <p className="tpl-endless__desc">{item.short_description}</p>
-                    )}
-                    <div className="tpl-endless__meta">
-                      <span className="tpl-endless__price">
-                        {formatPrice(item.price_minor, item.currency_code)}
-                      </span>
-                      {item.dietary_labels && item.dietary_labels.length > 0 && (
-                        <span className="tpl-endless__tags">{item.dietary_labels.join(' · ')}</span>
+            <ul className="table__places" role="list">
+              {course.items.map((item, i) => {
+                const h = tableSeed(item.id || item.name)
+                const side = i % 2 === 0 ? 'left' : 'right'
+                const rot = ((h % 9) - 4) * 0.7
+                const nudge = ((h >> 4) % 7) - 3
+                const desc = item.short_description || item.long_description
+                const style = {
+                  '--rot': `${rot.toFixed(2)}deg`,
+                  '--nudge': `${nudge}px`,
+                } as React.CSSProperties
+                return (
+                  <li key={item.id} className={'table__place table__place--' + side} style={style}>
+                    <div className="table__plate">
+                      {item.photo_url ? (
+                        <img
+                          className={photoClass(item, 'table__food')}
+                          src={item.photo_url}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          style={photoFrameStyle(item)}
+                        />
+                      ) : (
+                        <GeneratedPlate item={item} className="table__food" />
                       )}
                     </div>
-                  </div>
-                </motion.article>
-              )
-            })}
-          </div>
-        </section>
-      ))}
+                    <div className="table__napkin">
+                      <p className="table__dish">{item.name}</p>
+                      {desc ? <p className="table__desc">{desc}</p> : null}
+                      {item.price_minor !== null ? (
+                        <p className="table__price">{formatPrice(item.price_minor, item.currency_code)}</p>
+                      ) : null}
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
     </div>
   )
 }
@@ -767,332 +722,142 @@ function EndlessTable({ snapshot }: TemplateProps) {
  * page; the left page fades to reveal the revealed spread underneath. The
  * shading gradient rides the turning page so it reads as curving.
  */
+/**
+ * Riso Zine: each category is one spread of a two-ink zine. The left page is a
+ * halftone duotone of the category's lead dish; the right page is the list,
+ * printed in the second ink with a slight misregistration. Turn between spreads
+ * with the buttons, the keyboard, or a swipe.
+ */
+const ZINE_SWIPE_PX = 48
+
 function MenuMagazine({ snapshot }: TemplateProps) {
-  const categories = allCategories(snapshot)
-  const [page, setPage] = React.useState(0)
-  const [listMode, setListMode] = React.useState(false)
-  const [turning, setTurning] = React.useState<null | { from: number; to: number }>(null)
-  const touchStart = React.useRef<number | null>(null)
+  const spreads = React.useMemo(
+    () => allCategories(snapshot).filter((c) => c.items.length > 0),
+    [snapshot],
+  )
+  const n = spreads.length
+  const [index, setIndex] = React.useState(0)
+  const [turn, setTurn] = React.useState({ key: 0, dir: 1 as 1 | -1 })
+  const swipe = React.useRef<number | null>(null)
 
-  const totalPages = categories.length
-  const current = categories[page]
-
-  // The spread revealed underneath while the current one folds away.
-  const revealIndex = turning ? turning.to : page
-  const revealCat = categories[revealIndex]
-
-  const turnTo = React.useCallback(
-    (target: number) => {
-      if (target < 0 || target >= totalPages || target === page) return
-      setTurning({ from: page, to: target })
+  const go = React.useCallback(
+    (to: number, dir: 1 | -1) => {
+      if (n === 0) return
+      setIndex(((to % n) + n) % n)
+      setTurn((t) => ({ key: t.key + 1, dir }))
     },
-    [page, totalPages],
+    [n],
   )
 
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') turnTo(page + 1)
-      if (e.key === 'ArrowLeft') turnTo(page - 1)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [page, turnTo])
+  if (n === 0) {
+    return (
+      <div className="tpl tpl-magazine zine">
+        <p className="zine__empty">The zine has no pages yet. Add a dish to print the first spread.</p>
+      </div>
+    )
+  }
 
-  const forward = turning ? turning.to > turning.from : true
+  const spread = spreads[index]
+  const lead = spread.items.find((i) => i.photo_url) ?? spread.items[0]
 
   return (
-    <div className="tpl tpl-magazine">
-      <header className="tpl-magazine__masthead">
-        <div className="tpl-magazine__mastheadLeft">
-          <span className="tpl-label">Issue 01</span>
-          <h1 className="tpl-magazine__title">{snapshot.restaurant.name}</h1>
-        </div>
-        <span className="tpl-label">{snapshot.restaurant.address_text || 'Menu'}</span>
+    <div className="tpl tpl-magazine zine">
+      <header className="zine__masthead">
+        <h1 className="zine__title">{snapshot.restaurant.name}</h1>
+        {n > 1 ? (
+          <nav className="zine__index" aria-label="Sections">
+            {spreads.map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                className="zine__tab"
+                aria-current={i === index ? 'true' : undefined}
+                onClick={() => go(i, i >= index ? 1 : -1)}
+              >
+                {s.name}
+              </button>
+            ))}
+          </nav>
+        ) : null}
       </header>
 
-      <nav className="tpl-magazine__tabs" aria-label="Categories">
-        {categories.map((cat, idx) => (
-          <motion.button
-            type="button"
-            key={cat.id}
-            data-tab-id={cat.id}
-            className={'tpl-magazine__tab' + (idx === page ? ' is-active' : '')}
-            onClick={() => turnTo(idx)}
-            whileTap={{ scale: 0.97 }}
-            transition={snapTransition}
-            aria-current={idx === page ? 'page' : undefined}
-          >
-            <span className="tpl-magazine__tabNum">{String(idx + 1).padStart(2, '0')}</span>
-            {cat.name}
-          </motion.button>
-        ))}
+      <section
+        key={turn.key}
+        className="zine__spread"
+        data-dir={turn.dir === 1 ? 'next' : 'prev'}
+        aria-roledescription="spread"
+        aria-label={spread.name}
+        onPointerDown={(e) => {
+          swipe.current = e.clientX
+        }}
+        onPointerUp={(e) => {
+          if (swipe.current === null) return
+          const dx = e.clientX - swipe.current
+          swipe.current = null
+          if (dx < -ZINE_SWIPE_PX) go(index + 1, 1)
+          else if (dx > ZINE_SWIPE_PX) go(index - 1, -1)
+        }}
+        onPointerCancel={() => {
+          swipe.current = null
+        }}
+      >
+        <figure className="zine__page zine__page--photo">
+          {lead.photo_url ? (
+            <>
+              <img
+                className={photoClass(lead, 'zine__photo')}
+                src={lead.photo_url}
+                alt={lead.name}
+                style={photoFrameStyle(lead)}
+              />
+              <span className="zine__tint" aria-hidden="true" />
+            </>
+          ) : (
+            <GeneratedPlate item={lead} className="zine__photo" />
+          )}
+          <span className="zine__dots" aria-hidden="true" />
+        </figure>
+
+        <div className="zine__page zine__page--text">
+          <h2 className="zine__section">{spread.name}</h2>
+          <ul className="zine__list">
+            {spread.items.map((item) => {
+              const desc = item.short_description || item.long_description
+              return (
+                <li key={item.id} className="zine__item">
+                  <span className="zine__name">{item.name}</span>
+                  {item.price_minor !== null ? (
+                    <span className="zine__price">{formatPrice(item.price_minor, item.currency_code)}</span>
+                  ) : null}
+                  {desc ? <p className="zine__desc">{desc}</p> : null}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </section>
+
+      <footer className="zine__turn">
         <button
           type="button"
-          className="tpl-magazine__tab tpl-magazine__tab--list"
-          onClick={() => setListMode((v) => !v)}
-          aria-pressed={listMode}
+          className="zine__btn"
+          onClick={() => go(index - 1, -1)}
+          disabled={n < 2}
         >
-          {listMode ? 'Spread' : 'List'}
+          Previous page
         </button>
-        <TabIndicator activeId={current?.id || ''} scope=".tpl-magazine__tabs" />
-      </nav>
-
-      {listMode ? (
-        // Accessible list fallback: every item, as plain readable text.
-        <div className="tpl-magazine__list">
-          {categories.map((cat) => (
-            <section key={cat.id} className="tpl-magazine__listSection">
-              <h2 className="tpl-magazine__listTitle">{cat.name}</h2>
-              <ul>
-                {cat.items.map((item) => (
-                  <li key={item.id}>
-                    <span className="tpl-magazine__listName">{item.name}</span>
-                    {item.short_description && (
-                      <span className="tpl-magazine__listDesc">{item.short_description}</span>
-                    )}
-                    <span className="tpl-magazine__listPrice">
-                      {formatPrice(item.price_minor, item.currency_code)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
-      ) : (
-        <div
-          className="tpl-magazine__viewport"
-          onTouchStart={(e) => { touchStart.current = e.touches[0].clientX }}
-          onTouchEnd={(e) => {
-            if (touchStart.current === null) return
-            const delta = e.changedTouches[0].clientX - touchStart.current
-            touchStart.current = null
-            if (Math.abs(delta) > 30) turnTo(page + (delta < 0 ? 1 : -1))
-          }}
-        >
-          <div className="tpl-magazine__stage">
-            {/*
-              The spread being revealed. It sits underneath and becomes
-              visible as the current pages fold away.
-            */}
-            <div className="tpl-magazine__spread tpl-magazine__spread--base">
-              {revealCat && (
-                <SpreadPages
-                  category={revealCat}
-                  pageIndex={revealIndex}
-                  total={totalPages}
-                  snapshot={snapshot}
-                />
-              )}
-            </div>
-
-            {/*
-              The current spread. The RIGHT page hinges on the centre gutter
-              and sweeps over to the left, exactly like a magazine. It stops
-              at 90 degrees, where it is edge-on and invisible, so the
-              revealed spread can take over. Stopping there is also what
-              stops the text from ever appearing mirrored.
-            */}
-            {turning && (
-              <div className="tpl-magazine__turner">
-                <motion.div
-                  className="tpl-magazine__half tpl-magazine__half--left"
-                  initial={{ opacity: 1 }}
-                  animate={{ opacity: 0 }}
-                  transition={{ duration: 0.22, delay: 0.2, ease: 'easeIn' }}
-                >
-                  {categories[turning.from] && (
-                    <SpreadPages
-                      category={categories[turning.from]}
-                      pageIndex={turning.from}
-                      total={totalPages}
-                      snapshot={snapshot}
-                      halfOnly="left"
-                    />
-                  )}
-                </motion.div>
-
-                <motion.div
-                  className="tpl-magazine__half tpl-magazine__half--right"
-                  initial={{ rotateY: 0 }}
-                  animate={{ rotateY: forward ? -90 : 90 }}
-                  transition={{ duration: 0.52, ease: [0.42, 0, 0.25, 1] }}
-                  style={{ transformOrigin: 'left center' }}
-                  onAnimationComplete={() => {
-                    setPage(turning.to)
-                    setTurning(null)
-                  }}
-                >
-                  {categories[turning.from] && (
-                    <SpreadPages
-                      category={categories[turning.from]}
-                      pageIndex={turning.from}
-                      total={totalPages}
-                      snapshot={snapshot}
-                      halfOnly="right"
-                    />
-                  )}
-                </motion.div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="tpl-magazine__controls">
-        <motion.button
-          type="button"
-          onClick={() => turnTo(page - 1)}
-          disabled={page === 0}
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.94, y: 1 }}
-          transition={snapTransition}
-          aria-label="Previous page"
-        >
-          ←
-        </motion.button>
-        <span className="tpl-magazine__counter">
-          {page + 1} / {Math.max(totalPages, 1)}
+        <span className="zine__count" aria-live="polite">
+          {index + 1} / {n}
         </span>
-        <motion.button
+        <button
           type="button"
-          onClick={() => turnTo(page + 1)}
-          disabled={page >= totalPages - 1}
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.94, y: 1 }}
-          transition={snapTransition}
-          aria-label="Next page"
+          className="zine__btn"
+          onClick={() => go(index + 1, 1)}
+          disabled={n < 2}
         >
-          →
-        </motion.button>
-      </div>
-    </div>
-  )
-}
-
-/**
- * One magazine spread: a left page carrying the feature and a right page
- * carrying the numbered index. Each page has its own content, which is what
- * makes the spread read like a magazine rather than a grid.
- *
- * `halfOnly` renders a single half, which is what the page turn needs: the
- * two halves hinge independently at the gutter.
- */
-function SpreadPages({
-  category,
-  pageIndex,
-  total,
-  snapshot,
-  halfOnly,
-}: {
-  category: Category
-  pageIndex: number
-  total: number
-  snapshot: PublishedSnapshot
-  halfOnly?: 'left' | 'right'
-}) {
-  const items = category.items
-  // The lead item gets the left page as the feature; the right-hand page
-  // carries the complete numbered index, so it is never an empty page.
-  const lead = items.find((i) => i.is_featured) || items[0]
-
-  const leftPage = (
-    <section className="tpl-magazine__page tpl-magazine__page--left">
-      <div className="tpl-magazine__pageHead">
-        <span className="tpl-magazine__folio">{pageIndex + 1}</span>
-        <span className="tpl-magazine__folioTotal">of {total}</span>
-      </div>
-
-      <h2 className="tpl-magazine__featureTitle">{category.name}</h2>
-      {snapshot.restaurant.description && (
-        <p className="tpl-magazine__featureLede">{snapshot.restaurant.description}</p>
-      )}
-
-      {lead && (
-        <figure className={'tpl-magazine__feature' + (lead.photo_url ? '' : ' is-generated')}>
-          {lead.photo_url ? (
-            <img
-              src={lead.photo_url}
-              alt={lead.name}
-              className={photoClass(lead, 'tpl-magazine__featureImage')}
-              style={photoStyle(lead)}
-              {...photoSize(lead)}
-            />
-          ) : (
-            <GeneratedPlate item={lead} className="tpl-magazine__featurePlate" />
-          )}
-          <figcaption className="tpl-magazine__caption">
-            <h3 className="tpl-magazine__itemName">{lead.name}</h3>
-            {lead.short_description && (
-              <p className="tpl-magazine__itemDesc">{lead.short_description}</p>
-            )}
-            <span className="tpl-magazine__itemPrice">
-              {formatPrice(lead.price_minor, lead.currency_code)}
-            </span>
-          </figcaption>
-        </figure>
-      )}
-    </section>
-  )
-
-  const rightPage = (
-    <section className="tpl-magazine__page tpl-magazine__page--right">
-      <div className="tpl-magazine__pageHead">
-        <span className="tpl-label">On this page</span>
-        <span className="tpl-magazine__folio">{String(pageIndex + 1).padStart(2, '0')}</span>
-      </div>
-
-      <ul className="tpl-magazine__index">
-        {items.map((item, idx) => (
-          <li key={item.id} className="tpl-magazine__indexRow">
-            {item.photo_url && (
-              <img
-                src={item.photo_url}
-                alt=""
-                aria-hidden="true"
-                className={photoClass(item, 'tpl-magazine__indexImage')}
-                style={photoStyle(item)}
-                loading="lazy"
-                {...photoSize(item)}
-              />
-            )}
-            <span className="tpl-magazine__indexNum">{String(idx + 1).padStart(2, '0')}</span>
-            <div className="tpl-magazine__indexBody">
-              <span className="tpl-magazine__indexName">{item.name}</span>
-              {item.short_description && (
-                <span className="tpl-magazine__indexDesc">{item.short_description}</span>
-              )}
-            </div>
-            <span className="tpl-magazine__indexPrice">
-              {formatPrice(item.price_minor, item.currency_code)}
-            </span>
-          </li>
-        ))}
-        {items.length === 0 && (
-          <li className="tpl-magazine__indexEmpty">Nothing in this section yet.</li>
-        )}
-      </ul>
-
-      <footer className="tpl-magazine__pageFoot">
-        <span className="tpl-magazine__pageFootMark">
-          {String(pageIndex + 1).padStart(2, '0')} · {category.name}
-        </span>
-        {snapshot.restaurant.address_text && (
-          <span className="tpl-magazine__pageFootNote">{snapshot.restaurant.address_text}</span>
-        )}
+          Next page
+        </button>
       </footer>
-    </section>
-  )
-
-  if (halfOnly === 'left') return <>{leftPage}</>
-  if (halfOnly === 'right') return <>{rightPage}</>
-
-  return (
-    <div className="tpl-magazine__spreadInner">
-      {leftPage}
-      {rightPage}
-      {/* The spine. */}
-      <span className="tpl-magazine__gutter" aria-hidden="true" />
     </div>
   )
 }
