@@ -1,0 +1,22 @@
+.scrub { position: relative; }
+.scrub__stick {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--scrub-bg, #0b0b0a);
+}
+.scrub__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.scrub__content { position: relative; z-index: 1; padding: max(16px, env(safe-area-inset-left, 0px)); }
+@media (prefers-reduced-motion: reduce) {
+  .scrub { height: auto !important; }
+  .scrub__stick { position: relative; height: auto; min-height: 60svh; }
+}
